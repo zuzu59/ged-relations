@@ -3,6 +3,13 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
+## [0.0.51] — 2026-07-23 à 19h05
+
+### Note
+- **Versionning** : Incrémentation automatique de la version à chaque démarrage du serveur (0.0.49 → 0.0.51)
+
+---
+
 ## [0.0.49] — 2026-07-23 à 18h50
 
 ### Ajouté
