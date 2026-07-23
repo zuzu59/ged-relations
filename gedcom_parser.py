@@ -1,13 +1,19 @@
 """Parser GEDCOM → SQLite.
 
+Utilise ged4py pour le parsing GEDCOM avec fallback.
 Supporte GEDCOM 5.5.1 et 7.0.
 Extrait : individus, dates, filiation (père/mère/enfants).
 """
 import sqlite3
 import os
-import re
 import unicodedata
 from contextlib import contextmanager
+
+try:
+    from ged4py import GedcomReader
+    HAS_GED4PY = True
+except ImportError:
+    HAS_GED4PY = False
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "ged_data.db")
 
@@ -26,210 +32,287 @@ def strip_accents(text):
 
 
 def _parse_date(date_str):
-    """Parse une date GEDCOM (ex: ' 1 JAN 1900' ou ' 1 JAN 1900 BIRT)."""
+    """Parse une date GEDCOM (ex: ' 1 JAN 1900')."""
     if not date_str:
         return ""
     date_str = date_str.strip()
-    # GEDCOM date format: D MMM YYYY ou D MMM
-    months = {
-        "jan": "01", "janv": "01", "janvier": "01",
-        "feb": "02", "fév": "02", "fev": "02", "fevr": "02", "fevrier": "02",
-        "mar": "03", "mars": "03",
-        "apr": "04", "avr": "04", "avr ": "04", "avril": "04",
-        "may": "05", "mai": "05",
-        "jun": "06", "juin": "06",
-        "jul": "07", "juil": "07",
-        "aug": "08", "août": "08", "aout": "08",
-        "sep": "09", "sept": "09",
-        "oct": "10", "octo": "10",
-        "nov": "11", "novembre": "11",
-        "dec": "12", "déc": "12", "decembre": "12",
-    }
+    if not date_str:
+        return ""
     parts = date_str.split()
-    if len(parts) < 2:
-        return date_str
-    day = parts[0].zfill(2)
-    month_name = parts[1].lower().strip(".")
-    month = months.get(month_name, "00")
-    year = parts[2] if len(parts) >= 3 else ""
-    if month == "00":
-        return date_str
-    return f"{year}-{month}-{day}" if year else f"?-{month}-{day}"
+    if len(parts) >= 3:
+        day = parts[0].zfill(2)
+        month_map = {
+            "JAN": "01", "FEB": "02", "MAR": "03", "APR": "04",
+            "MAY": "05", "JUN": "06", "JUL": "07", "AUG": "08",
+            "SEP": "09", "OCT": "10", "NOV": "11", "DEC": "12"
+        }
+        month = month_map.get(parts[1].upper(), "01")
+        year = parts[2]
+        return f"{year}-{month}-{day}"
+    return date_str
 
 
-def parse_gedcom(filepath):
-    """Parse un fichier GEDCOM et retourne les données brutes.
-
-    Returns:
-        list of dicts with keys:
-            id, given_name, family_name, sex, birth_date, death_date,
-            father_id, mother_id, spouse_ids
-    """
+def _parse_gedcom_simple(filepath):
+    """Parser GEDCOM simple qui ignore les lignes corrompues."""
     individuals = {}
     families = {}
     current_id = None
     current_fam = None
-    husband = None
-    wife = None
-    children = []
-
-    with open(filepath, "r", encoding="utf-8", errors="replace") as f:
-        lines = f.readlines()
-
+    
+    with open(filepath, "rb") as f:
+        raw = f.read()
+    # Supprimer le BOM
+    if raw.startswith(b'\xef\xbb\xbf'):
+        raw = raw[3:]
+    # Supprimer les BOM multiples
+    while raw.startswith(b'\xc3\xaf\xc2\xbb\xc2\xbf'):
+        raw = raw[6:]
+    lines = raw.decode("utf-8", errors="replace").splitlines()
+    
     i = 0
     while i < len(lines):
-        line = lines[i].rstrip("\n")
-        parts = line.split(" ", 2)
-
-        if len(parts) < 2:
+        line = lines[i].rstrip()
+        if not line or not line[0].isdigit():
             i += 1
             continue
-
-        level = int(parts[0])
-        # Pour niveau 0, le format est "0 @ID@ TYPE" → tag = parts[2]
-        # Pour niveau 1+, le format est "1 TAG valeur" → tag = parts[1]
-        if level == 0 and len(parts) >= 3 and parts[1].startswith("@"):
-            tag = parts[2].upper()
-            id_value = parts[1].strip()
+        
+        try:
+            level = int(line[0])
+            rest = line[2:] if len(line) > 2 else ""
+        except (ValueError, IndexError):
+            i += 1
+            continue
+        
+        # Pour niveau 0, le format est "0 @ID@ TYPE"
+        if level == 0 and "@" in rest:
+            at_parts = rest.split("@")
+            if len(at_parts) >= 3:
+                id_value = at_parts[1]
+                tag_part = at_parts[2].strip()
+                tag = tag_part.split(" ")[0].upper() if tag_part else ""
+                value = " ".join(tag_part.split(" ")[1:]) if len(tag_part.split(" ")) > 1 else ""
+            else:
+                i += 1
+                continue
         else:
-            tag = parts[1].upper()
-            id_value = None
-        value = parts[2] if len(parts) > 2 else ""
-
+            parts = rest.split(" ", 1)
+            tag = parts[0].upper() if parts else ""
+            value = parts[1] if len(parts) > 1 else ""
+        
         # Niveau 0 : @ID@ INDI
         if level == 0 and tag == "INDI" and id_value:
-            current_id = id_value
-            individuals[current_id] = {
-                "id": current_id,
-                "given_name": "",
-                "family_name": "",
-                "sex": "",
-                "birth_date": "",
-                "death_date": "",
-                "father_id": "",
-                "mother_id": "",
-            }
+            current_id = rest.split("@")[1] if "@" in rest else None
+            if current_id:
+                individuals[current_id] = {
+                    "id": current_id,
+                    "given_name": "",
+                    "family_name": "",
+                    "sex": "",
+                    "birth_date": "",
+                    "death_date": "",
+                    "father_id": "",
+                    "mother_id": "",
+                    "families": [],
+                    "family_id": "",
+                }
             i += 1
             continue
-
-        # Niveau 0 : @ID@ FAMS
-        if level == 0 and tag == "FAMS" and id_value:
-            fam_id = id_value
-            if current_id and current_id in individuals:
-                individuals[current_id].setdefault("families", []).append(fam_id)
-            i += 1
-            continue
-
+        
         # Niveau 0 : @ID@ FAM
-        if level == 0 and tag == "FAM" and id_value:
-            current_fam = id_value
-            families[current_fam] = {
-                "id": current_fam,
-                "husband": "",
-                "wife": "",
-                "children": [],
-            }
-            husband = None
-            wife = None
-            children = []
+        if level == 0 and tag == "FAM" and "@" in rest:
+            current_fam = rest.split("@")[1] if "@" in rest else None
+            if current_fam:
+                families[current_fam] = {
+                    "id": current_fam,
+                    "husband": "",
+                    "wife": "",
+                    "children": [],
+                }
             i += 1
             continue
-
+        
         # Niveau 1 dans INDI
-        if current_id and level == 1:
-            ind = individuals.get(current_id, {})
-            if tag == "NAME":
-                # Format GEDCOM : "Prénom /NOM/"
-                name_str = value.strip()
-                # Extraire le nom de famille entre / /
-                if "/" in name_str:
-                    parts = name_str.split("/")
-                    ind["given_name"] = parts[0].strip()
-                    ind["family_name"] = parts[1].strip() if len(parts) > 1 else ""
-                else:
-                    # Pas de séparateur, tout est prénom
-                    ind["given_name"] = name_str
-                    ind["family_name"] = ""
+        if current_id and level == 1 and individuals.get(current_id):
+            ind = individuals[current_id]
+            if tag == "NAME" and "/" in value:
+                name_parts = value.split("/")
+                ind["given_name"] = name_parts[0].strip()
+                ind["family_name"] = name_parts[1].strip() if len(name_parts) > 1 else ""
             elif tag == "GIVN":
-                # Prénom (peut être composé: "Prénom NOM")
                 ind["given_name"] = value.strip()
             elif tag == "SURN":
-                # Nom de famille
-                if ind.get("family_name"):
-                    ind["family_name"] += " " + value.strip()
-                else:
-                    ind["family_name"] = value.strip()
+                ind["family_name"] = value.strip()
             elif tag == "SEX":
                 ind["sex"] = value.strip()
             elif tag == "FAMS":
-                ind.setdefault("families", []).append(value.strip())
+                ind["families"].append(value.strip())
             elif tag == "FAMC":
                 ind["family_id"] = value.strip()
-            elif tag == "BIRT" or tag == "DEAT":
-                # Date de naissance/mort
-                # Chercher la date dans les lignes suivantes (niveau 2)
-                date_val = ""
+            elif tag in ("BIRT", "DEAT"):
+                # Chercher la date dans les lignes suivantes
                 j = i + 1
                 while j < len(lines):
-                    sub_parts = lines[j].split(" ", 2)
-                    if len(sub_parts) >= 2:
-                        sub_level = int(sub_parts[0])
-                        sub_tag = sub_parts[1].upper()
-                        sub_val = sub_parts[2] if len(sub_parts) > 2 else ""
-                        if sub_level == 2 and sub_tag == "DATE":
-                            date_val = sub_val.strip()
-                            break
-                    if sub_level == 1:
+                    sub_line = lines[j].rstrip()
+                    if not sub_line or not sub_line[0].isdigit():
                         break
+                    try:
+                        sub_level = int(sub_line[0])
+                        sub_rest = sub_line[2:] if len(sub_line) > 2 else ""
+                        sub_parts = sub_rest.split(" ", 1)
+                        sub_tag = sub_parts[0].upper() if sub_parts else ""
+                        sub_val = sub_parts[1] if len(sub_parts) > 1 else ""
+                        if sub_level == 2 and sub_tag == "DATE":
+                            if tag == "BIRT":
+                                ind["birth_date"] = _parse_date(sub_val)
+                            else:
+                                ind["death_date"] = _parse_date(sub_val)
+                            break
+                    except (ValueError, IndexError):
+                        pass
                     j += 1
-                if tag == "BIRT":
-                    ind["birth_date"] = _parse_date(date_val)
-                elif tag == "DEAT":
-                    ind["death_date"] = _parse_date(date_val)
-                i = j if j > i + 1 else i + 1
+                i = j
                 continue
-
+        
         # Niveau 1 dans FAM
-        if current_fam and level == 1:
-            fam = families.get(current_fam, {})
+        if current_fam and level == 1 and families.get(current_fam):
+            fam = families[current_fam]
             if tag == "HUSB":
-                husb_id = value.strip()
-                fam["husband"] = husb_id
-                husband = husb_id
+                fam["husband"] = value.strip()
             elif tag == "WIFE":
-                wif_id = value.strip()
-                fam["wife"] = wif_id
-                wife = wif_id
+                fam["wife"] = value.strip()
             elif tag == "CHIL":
                 chil_id = value.strip()
                 fam["children"].append(chil_id)
-                children.append(chil_id)
-
+        
         i += 1
-
-    # Associer père/mère aux enfants via les familles
+    
+    # Mettre à jour les individus avec FAMS
     for fam in families.values():
         for child_id in fam["children"]:
             if child_id in individuals:
-                if fam["husband"]:
-                    individuals[child_id]["father_id"] = fam["husband"]
-                if fam["wife"]:
-                    individuals[child_id]["mother_id"] = fam["wife"]
+                if fam["id"] not in individuals[child_id]["families"]:
+                    individuals[child_id]["families"].append(fam["id"])
+    
+    return individuals, families
 
-    # Deuxième passe : résoudre les FAMC non résolus
-    for ind in individuals.values():
-        famc = ind.get("family_id", "")
-        if famc and famc in families:
-            fam = families[famc]
-            if fam["husband"] and not ind.get("father_id"):
-                ind["father_id"] = fam["husband"]
-            if fam["wife"] and not ind.get("mother_id"):
-                ind["mother_id"] = fam["wife"]
-            # Ajouter FAMS si missing
-            if famc not in ind.setdefault("families", []):
-                ind["families"].append(famc)
 
-    return list(individuals.values()), list(families.values())
+def parse_gedcom(filepath):
+    """Parse un fichier GEDCOM et retourne les données brutes.
+    
+    Utilise ged4py si disponible, sinon fallback sur un parser simple.
+
+    Returns:
+        tuple: (individuals dict, families dict)
+    """
+    if HAS_GED4PY:
+        try:
+            individuals = {}
+            families = {}
+            
+            with GedcomReader(filepath) as parser:
+                # Parser les individus
+                for indi in parser.records0("INDI"):
+                    ind_id = str(indi.id)
+                    
+                    # Nom
+                    given_name = ""
+                    family_name = ""
+                    name = indi.name
+                    if name:
+                        name_str = str(name)
+                        if "/" in name_str:
+                            parts = name_str.split("/")
+                            given_name = parts[0].strip()
+                            family_name = parts[1].strip() if len(parts) > 1 else ""
+                        else:
+                            given_name = name_str.strip()
+                    
+                    # Sexe
+                    sex = ""
+                    if indi.sex:
+                        sex = str(indi.sex)
+                    
+                    # Dates
+                    birth_date = ""
+                    death_date = ""
+                    
+                    birt = indi.sub_tag("BIRT")
+                    if birt:
+                        date_val = birt.sub_tag_value("DATE")
+                        if date_val:
+                            birth_date = _parse_date(str(date_val))
+                    
+                    deat = indi.sub_tag("DEAT")
+                    if deat:
+                        date_val = deat.sub_tag_value("DATE")
+                        if date_val:
+                            death_date = _parse_date(str(date_val))
+                    
+                    # Famille d'origine (FAMC)
+                    famc = indi.sub_tag("FAMC")
+                    father_id = ""
+                    mother_id = ""
+                    family_id = ""
+                    if famc:
+                        family_id = str(famc.id)
+                        fam_obj = famc
+                        if fam_obj:
+                            husband = fam_obj.sub_tag_value("HUSB")
+                            wife = fam_obj.sub_tag_value("WIFE")
+                            if husband:
+                                father_id = str(husband)
+                            if wife:
+                                mother_id = str(wife)
+                    
+                    individuals[ind_id] = {
+                        "id": ind_id,
+                        "given_name": given_name,
+                        "family_name": family_name,
+                        "sex": sex,
+                        "birth_date": birth_date,
+                        "death_date": death_date,
+                        "father_id": father_id,
+                        "mother_id": mother_id,
+                        "families": [],
+                        "family_id": family_id,
+                    }
+                
+                # Parser les familles
+                for fam in parser.records0("FAM"):
+                    fam_id = str(fam.id)
+                    
+                    husband = ""
+                    wife = ""
+                    children = []
+                    
+                    h = fam.sub_tag_value("HUSB")
+                    w = fam.sub_tag_value("WIFE")
+                    if h:
+                        husband = str(h)
+                    if w:
+                        wife = str(w)
+                    
+                    for chil in fam.sub_tags("CHIL"):
+                        children.append(str(chil.id))
+                    
+                    families[fam_id] = {
+                        "id": fam_id,
+                        "husband": husband,
+                        "wife": wife,
+                        "children": children,
+                    }
+                    
+                    for child_id in children:
+                        if child_id in individuals:
+                            individuals[child_id]["families"].append(fam_id)
+            
+            return individuals, families
+        
+        except Exception as e:
+            print(f"[WARN] ged4py failed: {e}, using simple parser")
+    
+    # Fallback
+    return _parse_gedcom_simple(filepath)
 
 
 def init_db(db_path=None):
@@ -251,9 +334,19 @@ def init_db(db_path=None):
             death_date TEXT,
             father_id TEXT,
             mother_id TEXT,
-            spouse_ids TEXT DEFAULT ''
+            spouse_ids TEXT DEFAULT '',
+            families TEXT DEFAULT ''
         );
-
+        
+        CREATE TABLE IF NOT EXISTS families (
+            id TEXT PRIMARY KEY,
+            husband_id TEXT,
+            wife_id TEXT,
+            children_ids TEXT DEFAULT '',
+            marriage_date TEXT,
+            marriage_place TEXT
+        );
+        
         CREATE TABLE IF NOT EXISTS relationships (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             person_a TEXT NOT NULL,
@@ -261,92 +354,82 @@ def init_db(db_path=None):
             rel_type TEXT NOT NULL,
             UNIQUE(person_a, person_b, rel_type)
         );
-
-        CREATE INDEX IF NOT EXISTS idx_search_name ON individuals(search_name);
-        CREATE INDEX IF NOT EXISTS idx_full_name ON individuals(full_name);
-        CREATE INDEX IF NOT EXISTS idx_father ON individuals(father_id);
-        CREATE INDEX IF NOT EXISTS idx_mother ON individuals(mother_id);
-        CREATE INDEX IF NOT EXISTS idx_rel_a ON relationships(person_a);
-        CREATE INDEX IF NOT EXISTS idx_rel_b ON relationships(person_b);
+        
+        CREATE INDEX IF NOT EXISTS idx_individuals_search ON individuals(search_name);
+        CREATE INDEX IF NOT EXISTS idx_relationships_person_a ON relationships(person_a);
+        CREATE INDEX IF NOT EXISTS idx_relationships_person_b ON relationships(person_b);
     """)
-    conn.commit()
     return conn
 
 
 def load_gedcom(filepath, db_path=None):
-    """Parser un fichier GEDCOM et le charger dans SQLite.
-
-    Returns:
-        (conn, count) — connexion SQLite et nombre d'individus chargés.
-    """
+    """Charger un fichier GEDCOM dans SQLite."""
     if db_path is None:
         db_path = DB_PATH
-    individuals, families = parse_gedcom(filepath)
+    individuals, families_dict = parse_gedcom(filepath)
 
     conn = init_db(db_path)
 
     # Coupler les époux via les familles
     spouse_map = {}
-    for fam in families:
+    for fam in families_dict.values():
         if fam["husband"] and fam["wife"]:
             h, w = fam["husband"], fam["wife"]
             spouse_map.setdefault(h, []).append(w)
             spouse_map.setdefault(w, []).append(h)
 
-    conn.execute("DELETE FROM individuals")
-    conn.execute("DELETE FROM relationships")
-
-    for ind in individuals:
-        surn = strip_accents(ind.get("family_name", "")).upper()
-        givn = strip_accents(ind.get("given_name", "")).upper()
-        full = f"{ind.get('given_name', '')} {ind.get('family_name', '')}".strip()
-        search = f"{givn} {surn}".strip()
-
-        # Époux
-        sp_ids = spouse_map.get(ind["id"], [])
-        sp_str = ",".join(sp_ids) if sp_ids else ""
-
+    # Insérer les individus
+    for ind in individuals.values():
+        given = ind["given_name"]
+        family = ind["family_name"]
+        full = f"{given} {family}".strip()
+        search = strip_accents(f"{given} {family}".lower())
+        
+        spouses = spouse_map.get(ind["id"], [])
+        fams = ind.get("families", [])
+        
         conn.execute(
-            """INSERT OR REPLACE INTO individuals
-               (id, given_name, family_name, full_name, search_name, sex,
-                birth_date, death_date, father_id, mother_id, spouse_ids)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (
-                ind["id"],
-                ind.get("given_name", ""),
-                ind.get("family_name", ""),
-                full,
-                search,
-                ind.get("sex", ""),
-                ind.get("birth_date", ""),
-                ind.get("death_date", ""),
-                ind.get("father_id", ""),
-                ind.get("mother_id", ""),
-                sp_str,
-            ),
+            "INSERT OR REPLACE INTO individuals VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            (ind["id"], given, family, full, search, ind["sex"],
+             ind["birth_date"], ind["death_date"], ind["father_id"],
+             ind["mother_id"], ",".join(spouses), ",".join(fams))
         )
 
-    # Charger les relations père/mère (uniquement enfant→parent)
-    for ind in individuals:
+    # Insérer les familles
+    for fam in families_dict.values():
+        children = ",".join(fam["children"])
+        conn.execute(
+            "INSERT OR REPLACE INTO families VALUES (?,?,?,?,?,?)",
+            (fam["id"], fam["husband"], fam["wife"], children, "", "")
+        )
+
+    # Insérer les relations
+    rel_set = set()
+    for ind in individuals.values():
         pid = ind["id"]
-        if ind.get("father_id"):
-            conn.execute(
-                "INSERT OR IGNORE INTO relationships (person_a, person_b, rel_type) VALUES (?, ?, ?)",
-                (pid, ind["father_id"], "father"),
-            )
-        if ind.get("mother_id"):
-            conn.execute(
-                "INSERT OR IGNORE INTO relationships (person_a, person_b, rel_type) VALUES (?, ?, ?)",
-                (pid, ind["mother_id"], "mother"),
-            )
-        # Époux : stocker une seule fois (plus petit ID en premier)
-        for sp in spouse_map.get(pid, []):
-            if sp > pid:
-                conn.execute(
-                    "INSERT OR IGNORE INTO relationships (person_a, person_b, rel_type) VALUES (?, ?, ?)",
-                    (pid, sp, "spouse"),
-                )
+        if ind["father_id"]:
+            rel_set.add((pid, ind["father_id"], "father"))
+        if ind["mother_id"]:
+            rel_set.add((pid, ind["mother_id"], "mother"))
+        for spouse_id in spouse_map.get(pid, []):
+            rel_set.add((pid, spouse_id, "spouse"))
+    
+    for a, b, r in rel_set:
+        conn.execute(
+            "INSERT OR IGNORE INTO relationships (person_a, person_b, rel_type) VALUES (?,?,?)",
+            (a, b, r)
+        )
 
     conn.commit()
-    count = conn.execute("SELECT COUNT(*) FROM individuals").fetchone()[0]
-    return conn, count
+    return conn, len(individuals)
+
+
+@contextmanager
+def get_db(db_path=None):
+    """Context manager pour la connexion SQLite."""
+    conn = sqlite3.connect(db_path or DB_PATH, check_same_thread=False)
+    conn.execute("PRAGMA foreign_keys=ON")
+    try:
+        yield conn
+    finally:
+        conn.close()
