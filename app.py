@@ -93,6 +93,7 @@ def index():
         version=ver,
         date=date,
         github_url=github_url,
+        current_branch=current_branch,
     )
 
 
@@ -100,7 +101,6 @@ def index():
 def about():
     """Page À propos."""
     ver, date = _version, _date
-    github_url = f"https://github.com/{_github_repo}/tree/master"
     # Lire la licence
     license_text = ""
     lic_path = os.path.join(os.path.dirname(__file__), "LICENSE")
@@ -117,6 +117,10 @@ def about():
         ).decode().strip()
     except:
         current_branch = "unknown"
+
+    github_url = f"https://github.com/{_github_repo}/tree/{current_branch}"
+    # Mettre à jour l'URL GitHub avec la branche actuelle
+    github_url = f"https://github.com/{_github_repo}/tree/{current_branch}"
     return render_template(
         "about.html",
         version=ver,
