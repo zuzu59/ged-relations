@@ -46,6 +46,16 @@ body {
     z-index: 100;
 }
 
+.header__title-link {
+    text-decoration: none;
+    color: inherit;
+    display: inline-block;
+}
+
+.header__title-link:hover .header__title {
+    opacity: 0.8;
+}
+
 .header__title {
     font-size: 1.3rem;
     font-weight: 700;

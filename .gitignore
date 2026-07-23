@@ -225,5 +225,5 @@ __marimo__/
 .streamlit/secrets.toml
 
 # Generated files
-ged_data.db
+ged_data.db*
 doc.pdf

@@ -87,7 +87,17 @@ def _check_rate_limit(ip):
 def index():
     """Page principale."""
     ver, date = _version, _date
-    github_url = f"https://github.com/{_github_repo}/tree/master"
+    # Récupérer la branche git actuelle
+    import subprocess
+    try:
+        current_branch = subprocess.check_output(
+            ["git", "branch", "--show-current"],
+            cwd=os.path.dirname(__file__),
+            stderr=subprocess.STDOUT
+        ).decode().strip()
+    except:
+        current_branch = "unknown"
+    github_url = f"https://github.com/{_github_repo}/tree/{current_branch}"
     return render_template(
         "index.html",
         version=ver,
