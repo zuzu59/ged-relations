@@ -12,7 +12,7 @@ et cette application respecte le [Versionnage sémantique](https://semver.org/la
 
 ---
 
-## [0.0.40] — 2026-07-23
+## [0.0.40] — 2026-07-23 à 18h17
 
 ### Ajouté
 - **Page À propos** :
@@ -21,7 +21,7 @@ et cette application respecte le [Versionnage sémantique](https://semver.org/la
 
 ---
 
-## [0.0.39] — 2026-07-23
+## [0.0.39] — 2026-07-23 à 17h25
 
 ### Corrigé
 - **Export GED** :
@@ -30,7 +30,7 @@ et cette application respecte le [Versionnage sémantique](https://semver.org/la
 
 ---
 
-## [0.0.38] — 2026-07-23
+## [0.0.38] — 2026-07-23 à 17h42
 
 ### Corrigé
 - **Export GED** :
@@ -40,11 +40,25 @@ et cette application respecte le [Versionnage sémantique](https://semver.org/la
 
 ---
 
-## [0.0.37] — 2026-07-23
+## [0.0.37] — 2026-07-23 à 16h40
+
+### Ajouté
+- **Format de la relation** : indentation dynamique
+  - Monter (père/mère) = +1 tab
+  - Descendre (fils/fille) = -1 tab
+  - Offset automatique
+- **Export PDF** :
+  - Nom de fichier : `individu1_individu2-yyymmdd.hhmm.pdf`
+  - Titre : "GED Relations - Rapport de parenté"
+  - Date d'export avec heure et minutes
+  - Footer avec version et date de build
+- **Parser GEDCOM** :
+  - Deuxième passe pour résoudre les FAMC
+  - Correction des familles
 
 ---
 
-## [0.0.36] — 2026-07-23
+## [0.0.36] — 2026-07-23 à 16h20
 
 ### Corrigé
 - **Bouton "Calculer" désactivé** : 
@@ -62,7 +76,7 @@ et cette application respecte le [Versionnage sémantique](https://semver.org/la
 
 ---
 
-## [0.0.35] — 2026-07-23
+## [0.0.35] — 2026-07-23 à 15h53
 
 ### Ajouté
 - **Application complète** (backend + frontend) :
@@ -90,7 +104,7 @@ et cette application respecte le [Versionnage sémantique](https://semver.org/la
 
 ---
 
-## [0.0.34] — 2026-07-23
+## [0.0.34] — 2026-07-23 à 15h23
 
 ### Ajouté
 - **Format texte des relations** :
@@ -107,7 +121,7 @@ et cette application respecte le [Versionnage sémantique](https://semver.org/la
 
 ---
 
-## [0.0.33] — 2026-07-23
+## [0.0.33] — 2026-07-23 à 15h19
 
 ### Ajouté
 - **Tests headless avec Playwright** :
@@ -125,7 +139,7 @@ et cette application respecte le [Versionnage sémantique](https://semver.org/la
 
 ---
 
-## [0.0.32] — 2026-07-23
+## [0.0.32] — 2026-07-23 à 15h19
 
 ### Ajouté
 - **Menu hamburger** :
@@ -150,7 +164,7 @@ et cette application respecte le [Versionnage sémantique](https://semver.org/la
 
 ---
 
-## [0.0.31] — 2026-07-23
+## [0.0.31] — 2026-07-23 à 15h19
 
 ### Ajouté
 - **Système de versionning** :
@@ -166,7 +180,7 @@ et cette application respecte le [Versionnage sémantique](https://semver.org/la
 
 ---
 
-## [0.0.30] — 2026-07-23
+## [0.0.30] — 2026-07-23 à 15h19
 
 ### Modifié
 - **Spécifications refactorisées** (`PROMPT2.md`) :
@@ -187,7 +201,7 @@ et cette application respecte le [Versionnage sémantique](https://semver.org/la
 
 ---
 
-## [0.0.1] — 2025-07-15
+## [0.0.1] — 2026-07-23 à 15h26
 
 ### Ajouté
 - **Premiers commits du projet** :
