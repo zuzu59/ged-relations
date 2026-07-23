@@ -3,6 +3,15 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
+## [0.0.52] — 2026-07-23 à 19h45
+
+### Corrigé
+- **Relations familiales** : Résolution correcte des père/mère via FAMC
+- **Format IDs** : Normalisation des IDs (sans @) dans toute l'application
+- **Graphes** : 465 relations calculées avec succès
+
+---
+
 ## [0.0.51] — 2026-07-23 à 19h30
 
 ### Ajouté
