@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}GED Relations — Recherche de liens de parenté{% endblock %}
+
+{% block content %}
+<div class="search-section">
+    <!-- Individu 1 -->
+    <div class="search-field">
+        <label class="search-field__label" for="person1">Individu 1</label>
+        <div class="search-field__input-wrap">
+            <input
+                type="text"
+                id="person1"
+                class="search-field__input"
+                placeholder="Rechercher un individu..."
+                autocomplete="off"
+                aria-label="Individu 1"
+            >
+            <button class="search-field__clear" id="clear1" aria-label="Effacer">×</button>
+        </div>
+        <div class="search-field__results" id="results1" hidden></div>
+    </div>
+
+    <!-- Individu 2 -->
+    <div class="search-field">
+        <label class="search-field__label" for="person2">Individu 2</label>
+        <div class="search-field__input-wrap">
+            <input
+                type="text"
+                id="person2"
+                class="search-field__input"
+                placeholder="Rechercher un individu..."
+                autocomplete="off"
+                aria-label="Individu 2"
+            >
+            <button class="search-field__clear" id="clear2" aria-label="Effacer">×</button>
+        </div>
+        <div class="search-field__results" id="results2" hidden></div>
+    </div>
+
+    <!-- Bouton calculer -->
+    <button id="btnCalc" class="btn btn--primary btn--full" disabled>
+        Calculer la relation
+    </button>
+</div>
+
+<!-- Résultat -->
+<div class="result-section" id="resultSection" hidden>
+    <div class="result-section__header">
+        <h2>Résultat</h2>
+    </div>
+    <div class="result-section__content" id="resultContent"></div>
+    <div class="result-section__exports" id="resultExports" hidden>
+        <button id="btnPdf" class="btn btn--secondary">📄 Exporter en PDF</button>
+        <button id="btnGed" class="btn btn--secondary">📋 Exporter en GED</button>
+    </div>
+</div>
+
+<!-- Message d'erreur -->
+<div class="result-section__error" id="resultError" hidden></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Données sélectionnées
+    let person1 = null;
+    let person2 = null;
+
+    // Initialiser les recherches
+    initSearch('person1', 'results1', (data) => { person1 = data; updateCalcBtn(); });
+    initSearch('person2', 'results2', (data) => { person2 = data; updateCalcBtn(); });
+
+    // Bouton calculer
+    document.getElementById('btnCalc').addEventListener('click', calculateRelation);
+
+    // Boutons export
+    document.getElementById('btnPdf').addEventListener('click', exportPdf);
+    document.getElementById('btnGed').addEventListener('click', exportGed);
+
+    // Effacer
+    document.getElementById('clear1').addEventListener('click', () => {
+        document.getElementById('person1').value = '';
+        person1 = null;
+        updateCalcBtn();
+    });
+    document.getElementById('clear2').addEventListener('click', () => {
+        document.getElementById('person2').value = '';
+        person2 = null;
+        updateCalcBtn();
+    });
+
+    function updateCalcBtn() {
+        document.getElementById('btnCalc').disabled = !(person1 && person2);
+    }
+
+    async function calculateRelation() {
+        if (!person1 || !person2) return;
+
+        const section = document.getElementById('resultSection');
+        const content = document.getElementById('resultContent');
+        const exports = document.getElementById('resultExports');
+        const error = document.getElementById('resultError');
+
+        section.hidden = false;
+        error.hidden = true;
+        exports.hidden = true;
+        content.innerHTML = '<div class="loading">Calcul en cours...</div>';
+
+        try {
+            const resp = await fetch('/api/relation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_a: person1.id, id_b: person2.id })
+            });
+            const data = await resp.json();
+
+            if (data.error) {
+                content.innerHTML = '';
+                error.hidden = false;
+                error.textContent = data.error;
+            } else {
+                content.textContent = data.text;
+                exports.hidden = false;
+                // Stocker les IDs pour l'export
+                content.dataset.idA = person1.id;
+                content.dataset.idB = person2.id;
+            }
+        } catch (err) {
+            content.innerHTML = '';
+            error.hidden = false;
+            error.textContent = 'Erreur de calcul. Réessayez.';
+        }
+    }
+
+    async function exportPdf() {
+        const content = document.getElementById('resultContent');
+        const resp = await fetch('/api/export/pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_a: content.dataset.idA, id_b: content.dataset.idB })
+        });
+        if (resp.ok) {
+            const blob = await resp.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'relation.pdf';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    }
+
+    async function exportGed() {
+        const content = document.getElementById('resultContent');
+        const resp = await fetch('/api/export/ged', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_a: content.dataset.idA, id_b: content.dataset.idB })
+        });
+        if (resp.ok) {
+            const text = await resp.text();
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'relation.ged';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    }
+</script>
+{% endblock %}

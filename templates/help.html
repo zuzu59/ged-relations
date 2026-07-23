@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Aide — GED Relations{% endblock %}
+
+{% block content %}
+<div class="help-page">
+    <h2>Aide</h2>
+
+    <section class="help-page__section">
+        <h3>🔍 Comment rechercher un individu</h3>
+        <p>
+            La recherche fonctionne par <strong>sous-chaîne</strong> (substring) sur les champs
+            <em>nom</em> et <em>prénom</em>. Les mots de recherche sont combinés par <strong>AND</strong>.
+        </p>
+        <ul>
+            <li>Écrivez un ou plusieurs mots dans le champ de recherche.</li>
+            <li>Chaque mot est recherché comme sous-chaîne dans le nom ou le prénom.</li>
+            <li>Les accents sont ignorés (ex: <code>Chloe</code> trouve <code>Chloé</code>).</li>
+            <li>La liste de prévisualisation se met à jour à chaque frappe.</li>
+            <li>Cliquez sur un individu dans la liste pour le sélectionner.</li>
+        </ul>
+    </section>
+
+    <section class="help-page__section">
+        <h3>💡 Exemples de recherche</h3>
+        <table class="help-page__table">
+            <thead>
+                <tr>
+                    <th>Saisie</th>
+                    <th>Résultat</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td><code>Chloé Zufferey</code></td><td>Recherche exacte ✅</td></tr>
+                <tr><td><code>Chloe Zufferey</code></td><td>Sans accent ✅</td></tr>
+                <tr><td><code>chlo zuff</code></td><td>Mots partiels ✅</td></tr>
+                <tr><td><code>chl ffer</code></td><td>Sous-chaînes internes ✅</td></tr>
+                <tr><td><code>xyz</code></td><td>Aucun résultat ❌</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="help-page__section">
+        <h3>📖 Comment lire le résultat</h3>
+        <p>Le résultat affiche la relation sous forme d'arbre textuel :</p>
+        <ul>
+            <li><strong>Une ligne par saut</strong> de relation (père, mère, fils, fille, époux...).</li>
+            <li><strong>Les tabulations</strong> indiquent la profondeur (indentation).</li>
+            <li>La relation peut aller <strong>vers le haut</strong> (aïeux) et/ou <strong>vers le bas</strong> (descendants).</li>
+            <li><strong>Pas de limite de profondeur</strong>.</li>
+        </ul>
+        <pre class="help-page__example">Individu 1
+    père
+        grand-père
+    mère
+        individu 2</pre>
+    </section>
+
+    <section class="help-page__section">
+        <h3>📤 Exports</h3>
+        <ul>
+            <li><strong>📄 PDF</strong> : export du résultat de relation en PDF avec mise en page soignée.</li>
+            <li><strong>📋 GED</strong> : export uniquement des individus et liens du chemin de relation au format GEDCOM.</li>
+        </ul>
+    </section>
+
+    <section class="help-page__section">
+        <h3>⚠️ Limites connues</h3>
+        <ul>
+            <li>Si les deux individus sont dans des <strong>arbres disjoints</strong> (pas de lien de parenté),
+                le message « Aucun lien de parenté trouvé » s'affiche.</li>
+            <li>Les dates manquantes dans le GED sont affichées comme « inconnues ».</li>
+        </ul>
+    </section>
+</div>
+{% endblock %}

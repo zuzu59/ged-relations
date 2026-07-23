@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}À propos — GED Relations{% endblock %}
+
+{% block content %}
+<div class="about-page">
+    <h2>À propos</h2>
+
+    <div class="about-page__card">
+        <h3>GED Relations</h3>
+        <p class="about-page__desc">
+            Application web permettant de calculer et afficher la relation la plus courte
+            entre deux individus au sein d'un arbre généalogique stocké dans un fichier GED (GEDCOM).
+        </p>
+
+        <dl class="about-page__info">
+            <dt>Version</dt>
+            <dd>v{{ version }}</dd>
+
+            <dt>Date de compilation</dt>
+            <dd>{{ date }}</dd>
+
+            <dt>Stack technique</dt>
+            <dd>Python / SQLite / HTML / CSS / JavaScript</dd>
+
+            <dt>Licence</dt>
+            <dd>
+                {% if license_text %}
+                <pre class="about-page__license">{{ license_text }}</pre>
+                {% else %}
+                Voir le fichier LICENSE dans le dépôt.
+                {% endif %}
+            </dd>
+
+            <dt>Dépôt GitHub</dt>
+            <dd><a href="{{ github_url }}" target="_blank" rel="noopener">{{ github_url }}</a></dd>
+        </dl>
+    </div>
+</div>
+{% endblock %}
