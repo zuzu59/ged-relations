@@ -220,12 +220,22 @@ def api_export_ged():
     if path is None:
         return jsonify({"error": "Aucun lien trouvé"}), 400
 
+    # Récupérer les noms pour le nom de fichier
+    ind_a = get_individual(_db, id_a)
+    ind_b = get_individual(_db, id_b)
+    name_a = f"{ind_a['given_name']} {ind_a['family_name']}".strip() if ind_a else id_a
+    name_b = f"{ind_b['given_name']} {ind_b['family_name']}".strip() if ind_b else id_b
+
+    # Générer le GED avec nom de fichier personnalisé
+    now = datetime.now()
+    date_str = now.strftime("%y%m%d.%H%M")
+    filename = f"{name_a}-{name_b}-{date_str}.ged".replace(" ", "_")
     ged_content = generate_ged(_db, id_a, id_b, path)
 
     return Response(
         ged_content,
         mimetype="text/plain",
-        headers={"Content-Disposition": "attachment; filename=relation.ged"},
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
 
 
