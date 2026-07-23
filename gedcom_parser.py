@@ -101,7 +101,7 @@ def _parse_gedcom_simple(filepath):
         
         # Niveau 0 : @ID@ INDI
         if level == 0 and tag == "INDI" and id_value:
-            current_id = rest.split("@")[1] if "@" in rest else None
+            current_id = id_value  # Déjà sans les @
             if current_id:
                 individuals[current_id] = {
                     "id": current_id,
@@ -177,21 +177,26 @@ def _parse_gedcom_simple(filepath):
         if current_fam and level == 1 and families.get(current_fam):
             fam = families[current_fam]
             if tag == "HUSB":
-                fam["husband"] = value.strip()
+                fam["husband"] = value.strip().lstrip("@").rstrip("@")
             elif tag == "WIFE":
-                fam["wife"] = value.strip()
+                fam["wife"] = value.strip().lstrip("@").rstrip("@")
             elif tag == "CHIL":
-                chil_id = value.strip()
+                chil_id = value.strip().lstrip("@").rstrip("@")
                 fam["children"].append(chil_id)
         
         i += 1
     
-    # Mettre à jour les individus avec FAMS
+    # Mettre à jour les individus avec FAMS et résoudre père/mère via FAMC
     for fam in families.values():
         for child_id in fam["children"]:
             if child_id in individuals:
                 if fam["id"] not in individuals[child_id]["families"]:
                     individuals[child_id]["families"].append(fam["id"])
+                # Résoudre père/mère
+                if fam["husband"] and not individuals[child_id]["father_id"]:
+                    individuals[child_id]["father_id"] = fam["husband"]
+                if fam["wife"] and not individuals[child_id]["mother_id"]:
+                    individuals[child_id]["mother_id"] = fam["wife"]
     
     return individuals, families
 
