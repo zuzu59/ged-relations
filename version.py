@@ -33,8 +33,7 @@ def get_version():
 def get_version_and_date():
     """Retourne (version, date_formatee) au démarrage."""
     ver = _read_version()
-    # Incrémenter la version au démarrage de chaque exécution
-    ver = _increment_version()
+    # Ne pas incrémenter automatiquement - c'est à l'utilisateur de gérer les versions
     now = datetime.now(timezone.utc)
     # Format: dd mmm yyyy (ex: 15 juil. 2025)
     mois = {
