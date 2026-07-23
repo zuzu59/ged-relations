@@ -3,13 +3,14 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
-## [0.0.49] — 2026-07-23 à 19h10
-
-### Corrigé
-- **Versionning** : Arrêt de l'incrémentation automatique de la version à chaque démarrage du serveur. La version est maintenant gérée manuellement.
+## [0.0.50] — 2026-07-23 à 19h20
 
 ### Ajouté
-- **Lien CHANGELOG** : Ajout d'un lien vers CHANGELOG.md dans la page À propos pour consulter l'historique des versions
+- **README.md** : Documentation complète du projet (installation, utilisation, structure, technologies)
+
+---
+
+## [0.0.49] — 2026-07-23 à 19h10
 
 ---
 
