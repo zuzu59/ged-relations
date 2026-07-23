@@ -48,12 +48,36 @@ Ces informations permettent à l'utilisateur d'identifier le bon individu parmi 
 ### Calcul de relation (Must)
 
 - Calculer **la relation la plus courte** (graphe non orienté, BFS) entre les deux individus sélectionnés.
-- Afficher le résultat sous forme **textuelle avec tabulations**, facilement lisible.
+- Afficher le résultat sous forme **textuelle avec indentation (tabulations)**, une relation par ligne, sans limite de profondeur.
+- **Chaque ligne** représente un saut de relation (père, mère, fils, fille, époux, etc.).
+- **L'indentation** montre la profondeur par rapport à l'individu 1 : 0 tab = individu 1, 1 tab = son parent, 2 tabs = son grand-parent, etc.
+- La relation peut aller **vers le haut** (aïeux), **vers le bas** (descendants), ou **les deux** (ex: monter vers un ancêtre commun puis redescendre).
 - Exemple de format :
   ```
   Lien de parenté le plus court : 3 degré(s)
-  
-  [Individu A] → père → [Intermédiaire 1] → mère → [Intermédiaire 2] → fils → [Individu B]
+
+  Individu 1
+      père
+          grand-père paternel
+      mère
+          individu 2
+  ```
+- Autre exemple (relation descendante uniquement) :
+  ```
+  Individu 1
+      fils
+          petit-fils
+      fille
+          individu 2
+  ```
+- Autre exemple (relation montante puis descendante) :
+  ```
+  Individu 1
+      père
+          grand-père
+      mère
+          tante
+              individu 2
   ```
 
 ### Multi-utilisateur (Must)
@@ -126,9 +150,13 @@ Ces informations permettent à l'utilisateur d'identifier le bon individu parmi 
 ├─────────────────────────────────────────────┤
 │  Résultat :                                 │
 │                                             │
-│  Lien de parenté le plus court : 3 degré(s) │
+│  Lien de parenté : 3 degré(s)               │
 │                                             │
-│  [Individu A] → père → ... → [Individu B]  │
+│  Individu A                                │
+│      père                                  │
+│          individu intermédiaire            │
+│      mère                                  │
+│          Individu B                        │
 │                                             │
 │  [Exporter en PDF]  [Exporter en GED]      │
 │                                             │
@@ -189,7 +217,19 @@ Ces informations permettent à l'utilisateur d'identifier le bon individu parmi 
     - `Chloe Zufferey` → sans accent
     - `chlo zuff` → mots partiels
     - `chl ffer` → sous-chaînes internes
-  - **Comment lire le résultat** : explication du format textuel de la relation
+  - **Comment lire le résultat** :
+    - Une ligne par saut de relation
+    - Tabulations pour l'indentation (profondeur)
+    - Directions possibles : père/mère (vers le haut), fils/fille (vers le bas), époux/épouse
+    - Pas de limite de profondeur
+    - Exemple :
+      ```
+      Individu 1
+          père
+              grand-père
+          mère
+              individu 2
+      ```
   - **Exports** : description des boutons PDF et GED
   - **Limites connues** : cas où aucune relation n'est trouvée (arbres disjoints)
 
@@ -208,7 +248,7 @@ Ces informations permettent à l'utilisateur d'identifier le bon individu parmi 
 - [ ] **AC02** — La recherche full-text trouve un individu avec une saisie sans accent, avec des mots partiels (sous-chaîne), ou une combinaison de ceux-ci.
 - [ ] **AC03** — La prévisualisation affiche nom, dates de naissance/mort, et filiation (père + mère).
 - [ ] **AC04** — Le calcul de la relation la plus courte retourne le chemin minimal correct (vérifié par BFS).
-- [ ] **AC05** — Le résultat est affiché en texte tabulé, lisible.
+- [ ] **AC05** — Le résultat est affiché avec un saut de ligne par relation, tabulations pour l'indentation, direction ascendante/descendante, sans limite de profondeur.
 - [ ] **AC06** — Deux requêtes simultanées ne se perturbent pas mutuellement.
 - [ ] **AC07** — L'export PDF produit un document présentable avec les informations de relation.
 - [ ] **AC08** — L'export GED génère un fichier GED valide contenant uniquement le sous-chemin de relation.

@@ -42,12 +42,43 @@ G1 : Jean DUPONT (1900-1980) ─── Marie MARTIN (1905-1990)
 
 | Individu A | Individu B | Relation attendue | Degrés |
 |-----------|-----------|-------------------|--------|
-| Jean DUPONT | Sophie DUPONT | aïeul → descendant (aïeul → fils → petit-fils → fille) | 3 |
-| Jean DUPONT | Marc DUPONT | aïeul → descendant (aïeul → fils → petit-fils → fils) | 3 |
-| Sophie DUPONT | Marc DUPONT | frère/sœur → frère/sœur (frères) | 2 |
-| Pierre DUPONT | Thomas BERTRAND | oncle → neveu (Pierre est l'oncle maternel de Thomas via Louise) | 2 |
-| Louise DUPONT | Sophie DUPONT | tante → nièce (tante paternelle de Sophie) | 2 |
-| Jean DUPONT | Thomas BERTRAND | aïeul → descendant (aïeul → fille → fils) | 3 |
+| Jean DUPONT | Sophie DUPONT | descendant (3 degrés) |
+| Jean DUPONT | Marc DUPONT | descendant (3 degrés) |
+| Sophie DUPONT | Marc DUPONT | frère/sœur (2 degrés) |
+| Pierre DUPONT | Thomas BERTRAND | oncle → neveu (2 degrés) |
+| Louise DUPONT | Sophie DUPONT | tante → nièce (2 degrés) |
+| Jean DUPONT | Thomas BERTRAND | descendant (3 degrés) |
+
+**Format attendu pour Sophie ↔ Marc (frères) :**
+```
+Sophie DUPONT
+    père
+        Jean DUPONT
+    mère
+        Marc DUPONT
+```
+
+**Format attendu pour Jean ↔ Sophie (aïeul → petite-fille) :**
+```
+Jean DUPONT
+    fils
+        Pierre DUPONT
+    fille
+        Sophie DUPONT
+```
+
+**Format attendu pour Jean ↔ Thomas (aïeul → arrière-petit-neveu) :**
+```
+Jean DUPONT
+    fils
+        Pierre DUPONT
+    fille
+        Louise DUPONT
+            fils
+                Thomas BERTRAND
+```
+
+> ⚠️ **Note** : L'algorithme BFS doit trouver le chemin le plus court. Le format d'affichage montre chaque saut sur une ligne avec tabulation, direction ascendante ou descendante.
 
 ### Tests d'erreurs
 
