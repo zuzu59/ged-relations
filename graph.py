@@ -118,22 +118,28 @@ def format_relation(conn, adj, person_a_id, person_b_id):
     lines = [f"Lien de parenté : {degrees} degré(s)"]
     lines.append("")
 
-    # L'individu de départ (indentation 0)
-    ind_a = get_individual(conn, person_a_id)
-    name_a = f"{ind_a['given_name']} {ind_a['family_name']}".strip() if ind_a else person_a_id
-    lines.append(name_a)
-
-    # Chemin linéaire : chaque saut augmente l'indentation
-    # Format : label (indent n) puis personne (indent n+1)
-    indent = 1
+    # Format arbre : monter = +1 tab, descendre = -1 tab
+    # Relations "père"/"mère" = monter, "fils"/"fille" = descendre
+    # Calculer d'abord toutes les indentations relatives
+    indentations = [0]  # Individu 1 à 0
+    current = 0
     for person_id, rel_label in path:
-        # Toujours afficher le label de relation
-        lines.append("\t" * indent + rel_label)
-        # Puis le nom de la personne
+        if rel_label in ("père", "mère"):
+            current += 1
+        elif rel_label in ("fils", "fille"):
+            current -= 1
+        indentations.append(current)
+    
+    # Trouver le minimum et ajuster pour que tout soit >= 0
+    min_indent = min(indentations)
+    offset = -min_indent if min_indent < 0 else 0
+    
+    # Afficher avec l'offset
+    for i, person_id in enumerate([person_a_id] + [p[0] for p in path]):
         ind = get_individual(conn, person_id)
         name = f"{ind['given_name']} {ind['family_name']}".strip() if ind else person_id
-        lines.append("\t" * (indent + 1) + name)
-        indent += 1
+        indent = indentations[i] + offset
+        lines.append("\t" * indent + name)
 
     text = "\n".join(lines)
     return degrees, text, None
