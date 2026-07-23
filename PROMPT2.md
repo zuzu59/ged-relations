@@ -132,6 +132,7 @@ Ces informations permettent à l'utilisateur d'identifier le bon individu parmi 
 │                                             │
 │  [Exporter en PDF]  [Exporter en GED]      │
 │                                             │
+│  v0.0.1 — 15 juil. 2025                     │
 └─────────────────────────────────────────────┘
 ```
 
@@ -155,6 +156,23 @@ Ces informations permettent à l'utilisateur d'identifier le bon individu parmi 
 - [ ] **AC07** — L'export PDF produit un document présentable avec les informations de relation.
 - [ ] **AC08** — L'export GED génère un fichier GED valide contenant uniquement le sous-chemin de relation.
 - [ ] **AC09** — Un arbre de plusieurs milliers d'individus est traité en moins de 10s au démarrage et < 2s par calcul.
+
+---
+
+## Versionning
+
+### Affichage (Must)
+
+- **Pied de page de chaque page** : afficher la version `0.0.x` et la date de compilation au format `dd mmm yyyy`.
+- Exemple : `v0.0.3 — 15 juil. 2025`
+- La version est incrémentée automatiquement à chaque compilation (patch : `x + 1`).
+- Le backend doit servir la version et la date via un endpoint ou les inclure dans les pages HTML servies.
+
+### Changelog (Must)
+
+- Fichier **`CHANGELOG.md`** au format [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
+- Mis à jour à **chaque changement de version** avec la date, le numéro de version, et la liste des modifications.
+- Sections obligatoires: `## [version] - yyyy-mm-dd`, avec sous-sections `Ajouté`, `Modifié`, `Corrigé`, `Supprimé` si pertinent.
 
 ---
 
