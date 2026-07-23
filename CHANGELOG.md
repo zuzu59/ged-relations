@@ -6,80 +6,168 @@ et cette application respecte le [Versionnage sémantique](https://semver.org/la
 ## [0.0.37] — 2026-07-23
 
 ### Modifié
-- Format de la relation : indentation dynamique (monter +1 tab, descendre -1 tab)
-- Export PDF : nom de fichier individuel, titre avec accent, date avec heure, version en footer
-- Corrections diverses du parser GEDCOM (FAMS/FAMC)
+- **Format de la relation** : indentation dynamique basée sur la profondeur dans l'arbre
+  - Monter (père/mère) = +1 tab
+  - Descendre (fils/fille) = -1 tab
+  - Offset automatique pour éviter les indentations négatives
+- **Export PDF** :
+  - Nom de fichier : `individu1_individu2-yyymmdd.hhmm.pdf`
+  - Titre : "GED Relations - Rapport de parenté" (avec accent é)
+  - Date d'export avec heure et minutes
+  - Footer avec version de l'application et date de build
+- **Parser GEDCOM** :
+  - Deuxième passe pour résoudre les FAMC non résolus
+  - Correction des familles (I25 n'est plus WIFE de F8)
 
 ---
 
 ## [0.0.36] — 2026-07-23
 
 ### Corrigé
-- Bouton "Calculer" désactivé : `inputId` non passé à `renderResults` dans `app.js`
-- Test data GED : ajout des tags FAMS/FAMC manquants, GEDC/SUBM sous HEAD, SOUR valide
-- Parser GEDCOM : deuxième passe pour résoudre les FAMC non résolus
+- **Bouton "Calculer" désactivé** : 
+  - Problème : `inputId` non passé à `renderResults` dans `app.js`
+  - Conséquence : impossible de sélectionner un individu, le bouton restait disabled
+  - Solution : passage de `inputId` comme paramètre dans toute la chaîne `initSearch → doSearch → renderResults`
+- **Test data GED (`test_data.ged`)** :
+  - Ajout des tags `FAMS` manquants dans tous les individus mariés
+  - Ajout des tags `FAMC` manquants dans tous les enfants
+  - Ajout de `GEDC 5.5.1` et `SUBM @SUBM@` sous HEAD
+  - Correction du tag `SOUR` (valide GEDCOM)
+- **Parser GEDCOM** :
+  - Deuxième passe après le premier chargement pour résoudre les FAMC
+  - Association père/mère via les familles quand FAMC est présent
 
 ---
 
 ## [0.0.35] — 2026-07-23
 
-### Corrigé
-- Application complète : backend Flask, parser GEDCOM, BFS, exports PDF/GED
-- Menu hamburger avec navigation
-- Pages À propos et Aide
-- Versionning automatique (version.txt incrémenté au démarrage)
-- Rate limiting (10 req/min par IP)
-- Données de test dans `test_data.ged`
+### Ajouté
+- **Application complète** (backend + frontend) :
+  - Backend Flask sur `0.0.0.0:8082`
+  - Parser GEDCOM 5.5.1 et 7.0 → SQLite
+  - Algorithme BFS pour la relation la plus courte
+  - Frontend HTML/CSS/JS responsive
+- **API REST** :
+  - `GET /api/search?q=...` : recherche full-text avec sous-chaînes
+  - `POST /api/relation` : calcul de relation entre deux individus
+  - `POST /api/export/pdf` : export PDF
+  - `POST /api/export/ged` : export GED
+- **Menu hamburger** :
+  - Panneau de navigation accessible (clavier + souris)
+  - Fermeture par Escape ou clic sur overlay
+- **Pages** :
+  - Page principale avec recherche et affichage des résultats
+  - Page "À propos" (version, date, stack, licence, lien GitHub)
+  - Page "Aide" (explications, exemples, format de résultat)
+- **Versionning automatique** :
+  - `version.txt` incrémenté à chaque démarrage
+  - Affichage en footer : `v0.0.x — dd mmm yyyy`
+- **Rate limiting** : 10 requêtes/min par IP
+- **Données de test** : `test_data.ged` avec 18 individus et 8 familles
 
 ---
 
 ## [0.0.34] — 2026-07-23
 
 ### Ajouté
-- Format texte des relations : une ligne par saut, tabulations, sans limite de profondeur
-- Support des directions multiples (montée/descente dans l'arbre)
+- **Format texte des relations** :
+  - Une ligne par saut de relation
+  - Tabulations pour l'indentation (profondeur)
+  - Support des directions multiples (montée/descente)
+  - Pas de limite de profondeur
+- **Exemple** :
+  ```
+  Jean DUPONT
+      Pierre DUPONT
+          Sophie DUPONT
+  ```
 
 ---
 
 ## [0.0.33] — 2026-07-23
 
 ### Ajouté
-- Tests headless par version avec Playwright
-- Fichier `TESTS-DATA.md` (jeux de données, recherche, relations, edge cases, performance)
-- Critère d'acceptation AC13 : tests headless avant chaque version
+- **Tests headless avec Playwright** :
+  - Validation automatique de l'interface web
+  - Tests de navigation, recherche, calcul de relation
+  - Tests d'exports PDF/GED
+- **Fichier `TESTS-DATA.md`** :
+  - Jeux de données de test
+  - Cas de recherche (sous-chaînes, accents)
+  - Cas de relations (frères, oncle/neveu, disjoints)
+  - Cas limites (même personne, personnes disjointes)
+- **Critère d'acceptation AC13** :
+  - Tests headless obligatoires avant chaque version
+  - Validation de tous les critères AC01-AC12
 
 ---
 
 ## [0.0.32] — 2026-07-23
 
 ### Ajouté
-- Menu hamburger avec panneau de navigation
-- Page "À propos" (version, date, stack, licence, lien dépôt GitHub)
-- Page "Aide" (explications de recherche, exemples, format de résultat, exports)
-- Critères d'acceptation AC10–AC12
+- **Menu hamburger** :
+  - Bouton menu accessible (aria-expanded)
+  - Panneau de navigation latéral
+  - Support clavier (Tab, Escape)
+- **Page "À propos"** :
+  - Version de l'application
+  - Date de build
+  - Stack technique (Flask, SQLite, fpdf2, Playwright)
+  - Licence MIT
+  - Lien vers le dépôt GitHub (branche ver1)
+- **Page "Aide"** :
+  - Exemples de recherche
+  - Explication du format de résultat
+  - Instructions d'export
+  - Limites de l'application
+- **Critères d'acceptation AC10-AC12** :
+  - AC10 : Menu hamburger fonctionnel
+  - AC11 : Page À propos informative
+  - AC12 : Page Aide complète
 
 ---
 
 ## [0.0.31] — 2026-07-23
 
 ### Ajouté
-- Système de versionning : pied de page avec version/date
-- `CHANGELOG.md` au format Keep a Changelog
-- Incrément automatique de la version à chaque démarrage
+- **Système de versionning** :
+  - Fichier `version.txt` (format `0.0.x`)
+  - Incrément automatique à chaque démarrage de l'application
+  - Affichage en footer de chaque page
+- **CHANGELOG.md** :
+  - Format Keep a Changelog
+  - Historique des versions avec catégories (Ajouté, Modifié, Corrigé, Supprimé)
+- **Critère d'acceptation AC09** :
+  - La version est affichée sur toutes les pages
+  - La version s'incrémente à chaque lancement
 
 ---
 
 ## [0.0.30] — 2026-07-23
 
 ### Modifié
-- Spécifications refactorisées : structure claire, critères d'acceptation détaillés, cas limites
-- Recherche par sous-chaîne (LIKE '%mot%') au lieu de prefix
-- Anti-accentuation (Chloé ≡ Chloe)
+- **Spécifications refactorisées** (`PROMPT2.md`) :
+  - Structure claire : Vue d'ensemble, Spécifications fonctionnelles, Spécifications techniques
+  - Interface utilisateur détaillée avec mockups
+  - Critères d'acceptation complets (AC01-AC09)
+  - Section "Évolutions futures"
+- **Recherche** :
+  - Passage du prefix matching à la sous-chaîne (LIKE '%mot%')
+  - Support de plusieurs mots (AND entre mots)
+  - Anti-accentuation (Chloé ≡ Chloe)
+- **Cas limites documentés** :
+  - Recherche vide
+  - Aucune result
+  - Même individu
+  - Individus disjoints
+  - Performances (10k+ individus)
 
 ---
 
 ## [0.0.1] — 2025-07-15
 
 ### Ajouté
-- Premiers commits du projet
-- Structure initiale du dépôt
+- **Premiers commits du projet** :
+  - Initialisation du dépôt GitHub
+  - Structure de base du projet
+  - Documentation initiale (PROMPT.md)
