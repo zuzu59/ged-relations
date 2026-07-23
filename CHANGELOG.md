@@ -3,6 +3,18 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
+## [0.0.51] — 2026-07-23 à 19h30
+
+### Ajouté
+- **Migration ged4py** : Utilisation de la bibliothèque ged4py pour le parsing GEDCOM avec fallback sur un parser simple
+- **Support encodages** : Gestion du BOM UTF-8, des fichiers Windows-1252, et des encodages problématiques
+- **Support MyHeritage** : Parsing réussi des fichiers exportés par MyHeritage Family Tree Builder
+
+### Modifié
+- **Parser GEDCOM** : Architecture hybride (ged4py + fallback simple) pour une meilleure compatibilité
+
+---
+
 ## [0.0.50] — 2026-07-23 à 19h20
 
 ### Ajouté
