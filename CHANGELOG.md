@@ -3,21 +3,35 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
-## [0.0.37] — 2026-07-23
+## [0.0.40] — 2026-07-23
 
-### Modifié
-- **Format de la relation** : indentation dynamique basée sur la profondeur dans l'arbre
-  - Monter (père/mère) = +1 tab
-  - Descendre (fils/fille) = -1 tab
-  - Offset automatique pour éviter les indentations négatives
-- **Export PDF** :
-  - Nom de fichier : `individu1_individu2-yyymmdd.hhmm.pdf`
-  - Titre : "GED Relations - Rapport de parenté" (avec accent é)
-  - Date d'export avec heure et minutes
-  - Footer avec version de l'application et date de build
-- **Parser GEDCOM** :
-  - Deuxième passe pour résoudre les FAMC non résolus
-  - Correction des familles (I25 n'est plus WIFE de F8)
+### Ajouté
+- **Page À propos** :
+  - Affichage de la branche git actuelle
+  - Lien GitHub vers la branche courante
+
+---
+
+## [0.0.39] — 2026-07-23
+
+### Corrigé
+- **Export GED** :
+  - Correction du nom de fichier : `individu1_individu2-yyymmdd.hhmm.ged`
+  - Utilisation du Content-Disposition de la réponse serveur
+
+---
+
+## [0.0.38] — 2026-07-23
+
+### Corrigé
+- **Export GED** :
+  - Ajout de `GEDC 5.5.1` et `SOUR GED Relations` sous HEAD
+  - Ajout des tags `FAMS` et `FAMC` dans tous les individus
+  - Reconstruction des familles (couples + parent-enfant)
+
+---
+
+## [0.0.37] — 2026-07-23
 
 ---
 
