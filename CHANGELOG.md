@@ -3,6 +3,55 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
+## [0.0.47] — 2026-07-23
+
+### Corrigé
+- **Version** : Incrémentation automatique (0.0.46 → 0.0.47)
+
+---
+
+## [0.0.46] — 2026-07-23
+
+### Corrigé
+- **Version** : Incrémentation automatique (0.0.45 → 0.0.46)
+
+---
+
+## [0.0.45] — 2026-07-23
+
+### Corrigé
+- **Version** : Incrémentation automatique (0.0.44 → 0.0.45)
+
+---
+
+## [0.0.44] — 2026-07-23
+
+### Corrigé
+- **Version** : Incrémentation automatique (0.0.43 → 0.0.44)
+
+---
+
+## [0.0.43] — 2026-07-23
+
+### Corrigé
+- **Version** : Incrémentation automatique (0.0.42 → 0.0.43)
+
+---
+
+## [0.0.42] — 2026-07-23
+
+### Corrigé
+- **Version** : Incrémentation automatique (0.0.41 → 0.0.42)
+
+---
+
+## [0.0.41] — 2026-07-23
+
+### Corrigé
+- **Version** : Incrémentation automatique (0.0.40 → 0.0.41)
+
+---
+
 ## [0.0.40] — 2026-07-23
 
 ### Ajouté
