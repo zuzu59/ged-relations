@@ -6,49 +6,9 @@ et cette application respecte le [Versionnage sémantique](https://semver.org/la
 ## [0.0.47] — 2026-07-23
 
 ### Corrigé
-- **Version** : Incrémentation automatique (0.0.46 → 0.0.47)
-
----
-
-## [0.0.46] — 2026-07-23
-
-### Corrigé
-- **Version** : Incrémentation automatique (0.0.45 → 0.0.46)
-
----
-
-## [0.0.45] — 2026-07-23
-
-### Corrigé
-- **Version** : Incrémentation automatique (0.0.44 → 0.0.45)
-
----
-
-## [0.0.44] — 2026-07-23
-
-### Corrigé
-- **Version** : Incrémentation automatique (0.0.43 → 0.0.44)
-
----
-
-## [0.0.43] — 2026-07-23
-
-### Corrigé
-- **Version** : Incrémentation automatique (0.0.42 → 0.0.43)
-
----
-
-## [0.0.42] — 2026-07-23
-
-### Corrigé
-- **Version** : Incrémentation automatique (0.0.41 → 0.0.42)
-
----
-
-## [0.0.41] — 2026-07-23
-
-### Corrigé
-- **Version** : Incrémentation automatique (0.0.40 → 0.0.41)
+- **Export GED** : Correction du format et des tags obligatoires (GEDC, SOUR, FAMS, FAMC)
+- **Export PDF** : Nom de fichier personnalisé avec date/heure
+- **Page About** : Affichage de la branche git actuelle et lien GitHub correct
 
 ---
 
