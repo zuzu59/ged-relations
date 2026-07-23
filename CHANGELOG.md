@@ -3,12 +3,17 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
-## [0.0.47] — 2026-07-23
+## [0.0.48] — 2026-07-23 à 18h45
+
+### Ajouté
+- **Titre cliquable** : Le titre "GED Relations" en haut à gauche est maintenant un lien qui ramène à la racine depuis toutes les pages
+- **Page About** : Affichage de la branche git actuelle et lien GitHub correct
 
 ### Corrigé
 - **Export GED** : Correction du format et des tags obligatoires (GEDC, SOUR, FAMS, FAMC)
 - **Export PDF** : Nom de fichier personnalisé avec date/heure
-- **Page About** : Affichage de la branche git actuelle et lien GitHub correct
+- **Serveur** : Correction erreur NameError sur `current_branch` dans la fonction `index()`
+- **Serveur** : Nettoyage des processus Python et caches .pyc avant redémarrage
 
 ---
 
