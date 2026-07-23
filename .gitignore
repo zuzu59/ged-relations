@@ -1,6 +1,9 @@
+# Étape 1 : Ignorer tous les fichiers avec l'extension .ged
 *.ged
 *.GED
 
+# Étape 2 : Ne pas ignorer le fichier spécifique test_data.ged
+!test_data.ged
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

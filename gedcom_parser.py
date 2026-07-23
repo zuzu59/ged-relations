@@ -216,6 +216,19 @@ def parse_gedcom(filepath):
                 if fam["wife"]:
                     individuals[child_id]["mother_id"] = fam["wife"]
 
+    # Deuxième passe : résoudre les FAMC non résolus
+    for ind in individuals.values():
+        famc = ind.get("family_id", "")
+        if famc and famc in families:
+            fam = families[famc]
+            if fam["husband"] and not ind.get("father_id"):
+                ind["father_id"] = fam["husband"]
+            if fam["wife"] and not ind.get("mother_id"):
+                ind["mother_id"] = fam["wife"]
+            # Ajouter FAMS si missing
+            if famc not in ind.setdefault("families", []):
+                ind["families"].append(famc)
+
     return list(individuals.values()), list(families.values())
 
 
