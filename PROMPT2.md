@@ -216,6 +216,31 @@ Ces informations permettent à l'utilisateur d'identifier le bon individu parmi 
 - [ ] **AC10** — Le menu hamburger ouvre/ferme correctement et est accessible au clavier.
 - [ ] **AC11** — La page "À propos" affiche version, date, stack, licence et lien vers la branche GitHub courante.
 - [ ] **AC12** — La page "Aide" contient des explications claires avec exemples de recherche.
+- [ ] **AC13** — Chaque version est validée par des tests headless (navigateur) utilisant le jeu de données `TESTS-DATA.md` avant incrémentation.
+
+---
+
+## Tests
+
+### Tests de validation par version (Must)
+
+- **À chaque nouvelle version** (`0.0.x`), exécuter un **jeu de tests réel** avec un **navigateur headless** (ex: Playwright, Puppeteer, ou Selenium) pour vérifier que toutes les fonctionnalités marchent comme demandé.
+- Les tests doivent interagir avec l'application comme un **vrai utilisateur** :
+  - Remplir les champs de recherche
+  - Cliquer dans les listes de prévisualisation
+  - Cliquer sur "Calculer la relation"
+  - Vérifier le résultat affiché
+  - Tester les exports PDF et GED
+  - Tester le menu hamburger, les pages À propos et Aide
+- Le jeu de données de test est défini dans le fichier **`TESTS-DATA.md`**.
+- Les tests sont **automatisés** et doivent passer avant chaque incrémentation de version.
+- En cas d'échec, **la version n'est pas incrémentée** — corriger d'abord.
+
+### Outils de test (Should)
+
+- **Playwright** (recommandé) ou Puppeteer pour l'automatisation navigateur headless.
+- Tests écrits en **TypeScript** ou **JavaScript**.
+- Commande unique pour lancer tous les tests : `npm test` ou `npx playwright test`.
 
 ---
 
