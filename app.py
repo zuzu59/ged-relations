@@ -107,12 +107,23 @@ def about():
     if os.path.exists(lic_path):
         with open(lic_path, "r", encoding="utf-8") as f:
             license_text = f.read().strip()
+    # Récupérer la branche git actuelle
+    import subprocess
+    try:
+        current_branch = subprocess.check_output(
+            ["git", "branch", "--show-current"],
+            cwd=os.path.dirname(__file__),
+            stderr=subprocess.STDOUT
+        ).decode().strip()
+    except:
+        current_branch = "unknown"
     return render_template(
         "about.html",
         version=ver,
         date=date,
         github_url=github_url,
         license_text=license_text,
+        current_branch=current_branch,
     )
 
 
