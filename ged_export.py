@@ -24,7 +24,7 @@ def generate_ged(conn, person_a_id, person_b_id, path):
     for pid in ids_in_path:
         row = conn.execute(
             "SELECT id, given_name, family_name, sex, birth_date, death_date, "
-            "father_id, mother_id FROM individuals WHERE id=?", (pid,)
+            "father_id, mother_id, spouse_ids FROM individuals WHERE id=?", (pid,)
         ).fetchone()
         if row:
             individuals[row[0]] = {
@@ -36,6 +36,7 @@ def generate_ged(conn, person_a_id, person_b_id, path):
                 "death_date": row[5],
                 "father_id": row[6] or "",
                 "mother_id": row[7] or "",
+                "spouse_ids": [s.strip() for s in (row[8] or "").split(",") if s.strip()],
             }
 
     if not individuals:
@@ -44,64 +45,73 @@ def generate_ged(conn, person_a_id, person_b_id, path):
     # Construire les familles
     families = {}
     fam_counter = 1
-    used_families = set()  # Éviter les doublons
+    fam_by_parents = {}  # Map (pere, mere) -> fam_id
 
     # 1. Couples (époux)
     for pid in ids_in_path:
-        sp_ids = conn.execute(
-            "SELECT spouse_ids FROM individuals WHERE id=?", (pid,)
-        ).fetchone()
-        if sp_ids and sp_ids[0]:
-            for sp_id in sp_ids[0].split(","):
-                sp_id = sp_id.strip()
-                if sp_id in ids_in_path:
-                    # Créer une famille couple
-                    fam_key = tuple(sorted([pid, sp_id]))
-                    if fam_key not in used_families:
-                        used_families.add(fam_key)
-                        fid = f"@F{fam_counter:04d}@"
-                        fam_counter += 1
-                        families[fid] = {
-                            "husband": pid if _get_sex_str(conn, pid) == "M" else sp_id,
-                            "wife": sp_id if _get_sex_str(conn, pid) == "M" else pid,
-                            "children": [],
-                        }
+        ind = individuals[pid]
+        for sp_id in ind["spouse_ids"]:
+            if sp_id in ids_in_path:
+                # Créer une famille couple
+                parents = tuple(sorted([pid, sp_id]))
+                if parents not in fam_by_parents:
+                    fam_by_parents[parents] = f"@F{fam_counter:04d}@"
+                    fam_counter += 1
 
     # 2. Parent-enfant
     for pid in ids_in_path:
-        ind = individuals.get(pid)
-        if not ind:
-            continue
-        # Père
+        ind = individuals[pid]
         if ind["father_id"] and ind["father_id"] in ids_in_path:
-            fam_key = tuple(sorted([ind["father_id"], pid]))
-            if fam_key not in used_families:
-                used_families.add(fam_key)
-                fid = f"@F{fam_counter:04d}@"
+            father = ind["father_id"]
+            mother = ind["mother_id"] if ind["mother_id"] in ids_in_path else ""
+            # Famille avec père et mère
+            if mother:
+                parents = tuple(sorted([father, mother]))
+                if parents not in fam_by_parents:
+                    fam_by_parents[parents] = f"@F{fam_counter:04d}@"
+                    fam_counter += 1
+                fam_id = fam_by_parents[parents]
+            else:
+                # Père seul
+                fam_id = f"@F{fam_counter:04d}@"
                 fam_counter += 1
-                families[fid] = {
-                    "husband": ind["father_id"],
-                    "wife": ind["mother_id"] if ind["mother_id"] in ids_in_path else "",
-                    "children": [pid],
+                fam_by_parents[(father,)] = fam_id
+
+            # Ajouter l'enfant à cette famille
+            if fam_id not in families:
+                families[fam_id] = {
+                    "husband": father,
+                    "wife": mother,
+                    "children": []
                 }
-        # Mère (si pas déjà dans une famille avec le père)
-        elif ind["mother_id"] and ind["mother_id"] in ids_in_path:
-            fam_key = tuple(sorted([ind["mother_id"], pid]))
-            if fam_key not in used_families:
-                used_families.add(fam_key)
-                fid = f"@F{fam_counter:04d}@"
-                fam_counter += 1
-                families[fid] = {
-                    "husband": "",
-                    "wife": ind["mother_id"],
-                    "children": [pid],
-                }
+            if pid not in families[fam_id]["children"]:
+                families[fam_id]["children"].append(pid)
+
+    # Remplir families et family_id pour chaque individu
+    for pid in ids_in_path:
+        ind = individuals[pid]
+        ind["families"] = []  # FAMS
+        ind["family_id"] = ""  # FAMC
+
+        # FAMC: famille où cet individu est enfant
+        for fam_id, fam in families.items():
+            if pid in fam["children"]:
+                ind["family_id"] = fam_id
+                break
+
+        # FAMS: familles où cet individu est parent
+        for fam_id, fam in families.items():
+            if fam["husband"] == pid or fam["wife"] == pid:
+                if fam_id not in ind["families"]:
+                    ind["families"].append(fam_id)
 
     # Générer le fichier GED
     lines = []
     lines.append("0 HEAD")
-    lines.append("1 SOUR GED Relations Export")
+    lines.append("1 SOUR GED Relations")
     lines.append("1 CHAR UTF-8")
+    lines.append("1 GEDC")
+    lines.append("2 VERS 5.5.1")
     lines.append("1 FILE GED Relations Export")
     lines.append("")
 
@@ -112,6 +122,12 @@ def generate_ged(conn, person_a_id, person_b_id, path):
         lines.append(f"1 NAME {ind['given_name']} {ind['family_name']}")
         if ind["sex"]:
             lines.append(f"1 SEX {ind['sex']}")
+        # FAMC
+        if ind["family_id"]:
+            lines.append(f"1 FAMC {ind['family_id']}")
+        # FAMS
+        for fam_id in ind["families"]:
+            lines.append(f"1 FAMS {fam_id}")
         if ind["birth_date"]:
             lines.append(f"1 BIRT")
             lines.append(f"2 DATE {_format_gedcom_date(ind['birth_date'])}")
@@ -135,42 +151,17 @@ def generate_ged(conn, person_a_id, person_b_id, path):
     return "\n".join(lines) + "\n"
 
 
-def _get_sex_str(conn, pid):
-    """Retourner le sexe d'un individu (M/F)."""
-    row = conn.execute(
-        "SELECT sex FROM individuals WHERE id=?", (pid,)
-    ).fetchone()
-    return row[0] if row else ""
-
-
-def _add_to_family(families, counter, parent_id, child_id):
-    """Ajouter une famille parent-enfant."""
-    fid = f"@F{counter:04d}@"
-    if parent_id == child_id:
-        return
-    # Déterminer HUSB/WIFE basé sur le sexe du parent
-    if parent_id not in families:
-        families[parent_id] = {
-            "husband": parent_id,
-            "wife": child_id,
-            "children": [],
-        }
-    else:
-        families[parent_id]["children"].append(child_id)
-
-
 def _format_gedcom_date(date_str):
-    """Convertir YYYY-MM-DD en format GEDCOM (ex: ' 1 JAN 2020')."""
-    if not date_str:
+    """Formater une date ISO en format GEDCOM (ex: 1 JAN 1900)."""
+    if not date_str or date_str == "":
         return ""
-    parts = date_str.split("-")
-    if len(parts) >= 3:
-        month_map = {
-            "01": "JAN", "02": "FEB", "03": "MAR", "04": "APR",
-            "05": "MAY", "06": "JUN", "07": "JUL", "08": "AUG",
-            "09": "SEP", "10": "OCT", "11": "NOV", "12": "DEC",
+    try:
+        from datetime import datetime
+        dt = datetime.fromisoformat(date_str)
+        mois = {
+            1: "JAN", 2: "FEB", 3: "MAR", 4: "APR", 5: "MAY", 6: "JUN",
+            7: "JUL", 8: "AUG", 9: "SEP", 10: "OCT", 11: "NOV", 12: "DEC"
         }
-        day = parts[2].lstrip("0") or "01"
-        month = month_map.get(parts[1], "JAN")
-        return f"{day} {month} {parts[0]}"
-    return date_str
+        return f"{dt.day:02d} {mois[dt.month]} {dt.year}"
+    except:
+        return date_str
