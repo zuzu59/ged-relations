@@ -5,7 +5,9 @@ entre deux individus d'un arbre généalogique GEDCOM.
 """
 import os
 import sys
+import io
 import threading
+from datetime import datetime
 from flask import Flask, render_template, request, jsonify, send_file, Response
 from version import get_version_and_date
 from gedcom_parser import load_gedcom, DB_PATH
@@ -188,12 +190,16 @@ def api_export_pdf():
     name_a = f"{ind_a['given_name']} {ind_a['family_name']}".strip() if ind_a else id_a
     name_b = f"{ind_b['given_name']} {ind_b['family_name']}".strip() if ind_b else id_b
 
+    # Générer le PDF avec nom de fichier personnalisé
+    now = datetime.now()
+    date_str = now.strftime("%y%m%d.%H%M")
+    filename = f"{name_a}-{name_b}-{date_str}.pdf".replace(" ", "_")
     pdf_bytes = generate_pdf(name_a, name_b, text, _db)
 
     return Response(
         pdf_bytes,
         mimetype="application/pdf",
-        headers={"Content-Disposition": "attachment; filename=relation.pdf"},
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
 
 

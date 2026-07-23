@@ -45,6 +45,18 @@ def get_version_and_date():
     return ver, date_str
 
 
+def get_version_info():
+    """Retourne un dict avec version et date de build."""
+    ver = get_version()
+    now = datetime.now()
+    mois = {
+        1: "janv.", 2: "févr.", 3: "mars", 4: "avr.", 5: "mai", 6: "juin",
+        7: "juil.", 8: "août", 9: "sept.", 10: "oct.", 11: "nov.", 12: "déc."
+    }
+    date_str = f"{now.day:02d} {mois[now.month]} {now.year}"
+    return {"version": ver, "build_date": date_str}
+
+
 def reset_version():
     """Réinitialise la version à 0.0.1 (utile pour les tests)."""
     with open(VERSION_FILE, "w", encoding="utf-8") as f:
