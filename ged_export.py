@@ -14,12 +14,10 @@ def generate_ged(conn, person_a_id, person_b_id, path):
         str: contenu GEDCOM
     """
     # Collecter tous les IDs uniques du chemin
-    ids_in_path = set()
-    ids_in_path.add(person_a_id)
+    ids_in_path = set([person_a_id, person_b_id])
     if path:
         for pid, _ in path:
             ids_in_path.add(pid)
-    ids_in_path.add(person_b_id)
 
     # Récupérer les individus du chemin
     individuals = {}
@@ -43,11 +41,12 @@ def generate_ged(conn, person_a_id, person_b_id, path):
     if not individuals:
         return ""
 
-    # Construire les familles (couples) dans le sous-chemin
+    # Construire les familles
     families = {}
     fam_counter = 1
+    used_families = set()  # Éviter les doublons
 
-    # Ajouter les relations époux si présentes
+    # 1. Couples (époux)
     for pid in ids_in_path:
         sp_ids = conn.execute(
             "SELECT spouse_ids FROM individuals WHERE id=?", (pid,)
@@ -55,26 +54,48 @@ def generate_ged(conn, person_a_id, person_b_id, path):
         if sp_ids and sp_ids[0]:
             for sp_id in sp_ids[0].split(","):
                 sp_id = sp_id.strip()
-                if sp_id in ids_in_path and sp_id > pid:
-                    fid = f"@F{fam_counter:04d}@"
-                    fam_counter += 1
-                    families[fid] = {
-                        "husband": pid,
-                        "wife": sp_id,
-                        "children": [],
-                    }
+                if sp_id in ids_in_path:
+                    # Créer une famille couple
+                    fam_key = tuple(sorted([pid, sp_id]))
+                    if fam_key not in used_families:
+                        used_families.add(fam_key)
+                        fid = f"@F{fam_counter:04d}@"
+                        fam_counter += 1
+                        families[fid] = {
+                            "husband": pid if _get_sex_str(conn, pid) == "M" else sp_id,
+                            "wife": sp_id if _get_sex_str(conn, pid) == "M" else pid,
+                            "children": [],
+                        }
 
-    # Lier les individus dans les familles via père/mère
+    # 2. Parent-enfant
     for pid in ids_in_path:
         ind = individuals.get(pid)
         if not ind:
             continue
+        # Père
         if ind["father_id"] and ind["father_id"] in ids_in_path:
-            _add_to_family(families, fam_counter, ind["father_id"], pid)
-            fam_counter += 1
-        if ind["mother_id"] and ind["mother_id"] in ids_in_path:
-            _add_to_family(families, fam_counter, ind["mother_id"], pid)
-            fam_counter += 1
+            fam_key = tuple(sorted([ind["father_id"], pid]))
+            if fam_key not in used_families:
+                used_families.add(fam_key)
+                fid = f"@F{fam_counter:04d}@"
+                fam_counter += 1
+                families[fid] = {
+                    "husband": ind["father_id"],
+                    "wife": ind["mother_id"] if ind["mother_id"] in ids_in_path else "",
+                    "children": [pid],
+                }
+        # Mère (si pas déjà dans une famille avec le père)
+        elif ind["mother_id"] and ind["mother_id"] in ids_in_path:
+            fam_key = tuple(sorted([ind["mother_id"], pid]))
+            if fam_key not in used_families:
+                used_families.add(fam_key)
+                fid = f"@F{fam_counter:04d}@"
+                fam_counter += 1
+                families[fid] = {
+                    "husband": "",
+                    "wife": ind["mother_id"],
+                    "children": [pid],
+                }
 
     # Générer le fichier GED
     lines = []
@@ -112,6 +133,14 @@ def generate_ged(conn, person_a_id, person_b_id, path):
 
     lines.append("0 TRLR")
     return "\n".join(lines) + "\n"
+
+
+def _get_sex_str(conn, pid):
+    """Retourner le sexe d'un individu (M/F)."""
+    row = conn.execute(
+        "SELECT sex FROM individuals WHERE id=?", (pid,)
+    ).fetchone()
+    return row[0] if row else ""
 
 
 def _add_to_family(families, counter, parent_id, child_id):

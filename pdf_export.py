@@ -65,4 +65,4 @@ def generate_pdf(person_a_name, person_b_name, relation_text, conn):
         safe_line = _sanitize(line)
         pdf.cell(0, 6, safe_line, 0, 1)
 
-    return pdf.output()
+    return bytes(pdf.output(dest='S'))

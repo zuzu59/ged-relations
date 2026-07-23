@@ -129,14 +129,14 @@ function doSearch(query, resultsContainer, inputId, onSelected) {
                 hideResults(resultsContainer);
                 return;
             }
-            renderResults(data, resultsContainer, onSelected);
+            renderResults(data, resultsContainer, onSelected, inputId);
         })
         .catch(() => {
             hideResults(resultsContainer);
         });
 }
 
-function renderResults(data, container, onSelected) {
+function renderResults(data, container, onSelected, inputId) {
     container.innerHTML = '';
 
     data.forEach(ind => {
