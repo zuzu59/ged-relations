@@ -112,7 +112,7 @@ Ces informations permettent à l'utilisateur d'identifier le bon individu parmi 
 
 ```
 ┌─────────────────────────────────────────────┐
-│  GED Relations                              │
+│  GED Relations                          [☰] │
 ├─────────────────────────────────────────────┤
 │                                             │
 │  Individu 1 : [________________]  [✓]      │
@@ -136,6 +136,63 @@ Ces informations permettent à l'utilisateur d'identifier le bon individu parmi 
 └─────────────────────────────────────────────┘
 ```
 
+**Menu hamburger ouvert :**
+```
+┌──────────────────────────────────────┐
+│  GED Relations              [✕]      │
+├──────────────────────────────────────┤
+│                                      │
+│  ───────────────────────────         │
+│                                      │
+│  [ℹ]  À propos                       │
+│  [?]  Aide                           │
+│                                      │
+│  ───────────────────────────         │
+│                                      │
+│  v0.0.1 — 15 juil. 2025             │
+│                                      │
+└──────────────────────────────────────┘
+```
+
+### Menu hamburger (Must)
+
+- Icône hamburger (☰) en haut à droite de la page.
+- Ouvrant un panneau latéral ou une overlay avec les liens :
+  - **À propos** — page "About"
+  - **Aide** — page "Help"
+- Fermeture du menu par clic sur le fond, le bouton ✕, ou la touche `Échap`.
+- Accessible clavier : `Tab` pour naviguer, `Entrée` pour activer, `Échap` pour fermer.
+- Accessibilité : `aria-label="Menu"`, `aria-expanded`, `role="button"`.
+
+### Page "À propos" (Must)
+
+- Accessible via le menu hamburger.
+- Contient :
+  - **Nom de l'application** : GED Relations
+  - **Version** : `v0.0.x` (dynamique, identique au pied de page)
+  - **Date de compilation** : `dd mmm yyyy`
+  - **Description** : courte (1-2 phrases)
+  - **Stack technique** : Python, SQLite, HTML/CSS/JS
+  - **Licence** : mention de la licence du projet (`LICENSE`)
+  - **Lien vers le dépôt** : lien cliquable pointant vers **la branche actuelle** du dépôt GitHub
+    - Exemple de texte: `Dépôt GitHub — branche master`
+    - URL dynamique selon la branche courante (ex: `https://github.com/zuzu59/ged-relations/tree/master`)
+  - **Auteur** : mention si applicable
+
+### Page "Aide" (Must)
+
+- Accessible via le menu hamburger.
+- Contient :
+  - **Comment rechercher un individu** : explication de la recherche multi-mots avec sous-chaînes
+  - **Exemples de recherche** :
+    - `Chloé Zufferey` → recherche exacte
+    - `Chloe Zufferey` → sans accent
+    - `chlo zuff` → mots partiels
+    - `chl ffer` → sous-chaînes internes
+  - **Comment lire le résultat** : explication du format textuel de la relation
+  - **Exports** : description des boutons PDF et GED
+  - **Limites connues** : cas où aucune relation n'est trouvée (arbres disjoints)
+
 ### Comportements
 
 - **Saisie → autocomplétion** : la liste de prévisualisation se met à jour à chaque frappe.
@@ -156,6 +213,9 @@ Ces informations permettent à l'utilisateur d'identifier le bon individu parmi 
 - [ ] **AC07** — L'export PDF produit un document présentable avec les informations de relation.
 - [ ] **AC08** — L'export GED génère un fichier GED valide contenant uniquement le sous-chemin de relation.
 - [ ] **AC09** — Un arbre de plusieurs milliers d'individus est traité en moins de 10s au démarrage et < 2s par calcul.
+- [ ] **AC10** — Le menu hamburger ouvre/ferme correctement et est accessible au clavier.
+- [ ] **AC11** — La page "À propos" affiche version, date, stack, licence et lien vers la branche GitHub courante.
+- [ ] **AC12** — La page "Aide" contient des explications claires avec exemples de recherche.
 
 ---
 
