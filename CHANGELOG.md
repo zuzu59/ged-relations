@@ -3,6 +3,14 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
+## [0.0.53] — 2026-07-24 à 10h15
+
+### Corrigé
+- **Rate limiting** : Désactivé par défaut pour usage familial
+- **Multi-utilisateur** : Plus de blocage lors de calculs simultanés
+
+---
+
 ## [0.0.52] — 2026-07-23 à 19h45
 
 ### Corrigé
