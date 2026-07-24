@@ -123,18 +123,25 @@ def get_parents(conn, person_id):
 
 
 def get_spouse(conn, person_id):
-    """Récupérer le/la conjoint(e) d'un individu via les relations."""
+    """Récupérer le/la conjoint(e) d'un individu via les relations.
+    
+    Retourne: (nom_complet, date_naissance, date_deces, sexe_conjoint) ou (None, None, None, None)
+    """
     row = conn.execute(
         "SELECT person_b FROM relationships WHERE person_a=? AND rel_type='spouse'", (person_id,)
     ).fetchone()
     if not row:
-        return None
+        return None, None, None, None
     
     spouse_id = row[0]
     s = get_individual(conn, spouse_id)
     if s:
-        return f"{s['given_name']} {s['family_name']}".strip()
-    return None
+        full_name = f"{s['given_name']} {s['family_name']}".strip()
+        birth = _format_date(s['birth_date']) if s['birth_date'] else ""
+        death = _format_date(s['death_date']) if s['death_date'] else ""
+        sex = s.get('sex', '')
+        return full_name, birth, death, sex
+    return None, None, None, None
 
 
 def format_relation(conn, adj, person_a_id, person_b_id):
@@ -196,14 +203,42 @@ def format_relation(conn, adj, person_a_id, person_b_id):
         is_intermediate = i > 0 and i < len(all_person_ids) - 1
         extra_info = ""
         if is_intermediate:
-            spouse = get_spouse(conn, person_id)
+            spouse_name, spouse_birth, spouse_death, spouse_sex = get_spouse(conn, person_id)
             
-            if spouse:
+            if spouse_name:
                 sex = ind['sex']
+                spouse_dates = ""
+                if spouse_birth:
+                    spouse_dates = f" ({spouse_birth})" + (f" — ({spouse_death})" if spouse_death else "")
+                
+                # Toujours afficher l'homme en premier, suivi de la femme
                 if sex == 'M':
-                    extra_info = f" | épouse: {spouse}"
+                    # L'individu est un homme, afficher son épouse
+                    extra_info = f" | épouse: {spouse_name}{spouse_dates}"
                 elif sex == 'F':
-                    extra_info = f" | époux: {spouse}"
+                    # L'individu est une femme, afficher son MARI EN PREMIER comme sujet, puis elle
+                    # Récupérer les infos du mari
+                    husband_name = spouse_name
+                    husband_birth = spouse_birth
+                    husband_death = spouse_death
+                    wife_name = name  # Sauvegarder le nom de la femme avant de remplacer
+                    wife_birth = birth
+                    wife_death = death
+                    
+                    # Construire la ligne avec le mari comme sujet
+                    husband_dates = ""
+                    if husband_birth:
+                        husband_dates = f" ({husband_birth})" + (f" — ({husband_death})" if husband_death else "")
+                    
+                    # Construire les dates de la femme
+                    wife_dates = ""
+                    if wife_birth:
+                        wife_dates = f" ({wife_birth})" + (f" — ({wife_death})" if wife_death else "")
+                    
+                    # Remplacer le nom de la femme par celui du mari dans la ligne
+                    name = husband_name
+                    dates = husband_dates
+                    extra_info = f" | épouse: {wife_name}{wife_dates}"
         
         line = f"{name}{dates}{extra_info}"
         indent = indentations[i] + offset
@@ -295,15 +330,15 @@ def search_individuals(conn, query):
 
 
 def _format_date(date_str):
-    """Formater une date YYYY-MM-DD → dd/mm/yy."""
+    """Formater une date YYYY-MM-DD → dd/mm/yyyy."""
     if not date_str:
         return ""
     parts = date_str.split("-")
     if len(parts) >= 3 and parts[0] != "?":
-        # dd/mm/yy
-        day = parts[2][-2:]
+        # dd/mm/yyyy
+        day = parts[2]
         month = parts[1]
-        year = parts[0][-2:]
+        year = parts[0]
         return f"{day}/{month}/{year}"
     if len(parts) >= 2 and parts[0] != "?":
         return f"{parts[0]}-{parts[1]}"

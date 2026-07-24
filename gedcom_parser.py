@@ -52,6 +52,18 @@ def _parse_date(date_str):
     return date_str
 
 
+def _fix_double_encoding(raw_bytes):
+    """Corriger un double encodage UTF-8 (ex: 'Ã©' -> 'é')."""
+    try:
+        # Decoder en UTF-8 (donne les caractères double-encodés)
+        text = raw_bytes.decode("utf-8", errors="replace")
+        # Encoder en Latin-1 (convertit chaque caractère en byte)
+        # puis redecoder en UTF-8
+        return text.encode("latin-1", errors="replace").decode("utf-8", errors="replace")
+    except Exception:
+        return raw_bytes.decode("utf-8", errors="replace")
+
+
 def _parse_gedcom_simple(filepath):
     """Parser GEDCOM simple qui ignore les lignes corrompues."""
     individuals = {}
@@ -67,7 +79,8 @@ def _parse_gedcom_simple(filepath):
     # Supprimer les BOM multiples
     while raw.startswith(b'\xc3\xaf\xc2\xbb\xc2\xbf'):
         raw = raw[6:]
-    lines = raw.decode("utf-8", errors="replace").splitlines()
+    # Corriger le double encodage UTF-8
+    lines = _fix_double_encoding(raw).splitlines()
     
     i = 0
     while i < len(lines):
