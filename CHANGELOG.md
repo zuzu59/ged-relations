@@ -3,6 +3,13 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
+## [0.0.62] — 2026-07-24 à 16h45
+
+### Corrigé
+- **Export GED** : Structure correcte (HEAD avec SUBM/FORM, IDs entre @, format noms GEDCOM)
+
+---
+
 ## [0.0.61] — 2026-07-24 à 16h35
 
 ### Amélioré
