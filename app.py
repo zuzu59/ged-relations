@@ -61,9 +61,9 @@ def _load_db(ged_path=None):
 # Rate limiting simple par IP
 _rate_limits = {}
 _rate_lock = threading.Lock()
-MAX_REQUESTS = 1000  # Très permissif pour usage familial
+MAX_REQUESTS = 200  # Généreux pour usage familial (200 req/min)
 RATE_WINDOW = 60  # secondes
-RATE_LIMIT_ENABLED = False  # Désactivé par défaut pour usage local
+RATE_LIMIT_ENABLED = True  # Activé pour éviter les abus
 
 
 def _check_rate_limit(ip):
