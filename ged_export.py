@@ -112,14 +112,16 @@ def generate_ged(conn, person_a_id, person_b_id, path):
     lines.append("1 CHAR UTF-8")
     lines.append("1 GEDC")
     lines.append("2 VERS 5.5.1")
+    lines.append("2 FORM LINEAGE-LINKED")
+    lines.append("1 SUBM @SUBM@")
     lines.append("1 FILE GED Relations Export")
     lines.append("")
 
     # Individus
     for pid in sorted(individuals.keys()):
         ind = individuals[pid]
-        lines.append(f"0 {pid} INDI")
-        lines.append(f"1 NAME {ind['given_name']} {ind['family_name']}")
+        lines.append(f"0 @{pid}@ INDI")
+        lines.append(f"1 NAME {ind['given_name']} /{ind['family_name']}/")
         if ind["sex"]:
             lines.append(f"1 SEX {ind['sex']}")
         # FAMC
@@ -140,11 +142,11 @@ def generate_ged(conn, person_a_id, person_b_id, path):
     for fid, fam in sorted(families.items()):
         lines.append(f"0 {fid} FAM")
         if fam["husband"]:
-            lines.append(f"1 HUSB {fam['husband']}")
+            lines.append(f"1 HUSB @{fam['husband']}@")
         if fam["wife"]:
-            lines.append(f"1 WIFE {fam['wife']}")
+            lines.append(f"1 WIFE @{fam['wife']}@")
         for child in fam["children"]:
-            lines.append(f"1 CHIL {child}")
+            lines.append(f"1 CHIL @{child}@")
         lines.append("")
 
     lines.append("0 TRLR")
