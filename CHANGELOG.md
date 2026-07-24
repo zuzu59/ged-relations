@@ -3,6 +3,15 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
+## [0.0.55] — 2026-07-24 à 10h30
+
+### Ajouté
+- **Dates** : Affichage des dates de naissance et décès pour chaque individu
+- **Parents** : Affichage des deux parents sur la même ligne (père en premier)
+- **Formattage** : Amélioration de la lisibilité des résultats
+
+---
+
 ## [0.0.54] — 2026-07-24 à 10h25
 
 ### Corrigé
