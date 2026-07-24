@@ -119,7 +119,9 @@
                 error.hidden = false;
                 error.textContent = data.error;
             } else {
-                content.textContent = data.text;
+                // Remplacer les tabulations par des espaces pour une meilleure lisibilité mobile
+                const formattedText = data.text.replace(/\t/g, ' ');
+                content.textContent = formattedText;
                 exports.hidden = false;
                 // Stocker les IDs pour l'export
                 content.dataset.idA = person1.id;
