@@ -98,10 +98,35 @@ def find_shortest_path(adj, start, end):
     return None, -1
 
 
+def get_parents(conn, person_id):
+    """Récupérer les parents d'un individu."""
+    row = conn.execute(
+        "SELECT father_id, mother_id FROM individuals WHERE id=?", (person_id,)
+    ).fetchone()
+    if not row:
+        return None, None
+    
+    father_id, mother_id = row
+    father_name = ""
+    mother_name = ""
+    
+    if father_id:
+        f = get_individual(conn, father_id)
+        if f:
+            father_name = f"{f['given_name']} {f['family_name']}".strip()
+    if mother_id:
+        m = get_individual(conn, mother_id)
+        if m:
+            mother_name = f"{m['given_name']} {m['family_name']}".strip()
+    
+    return father_name, mother_name
+
+
 def format_relation(conn, adj, person_a_id, person_b_id):
     """Formater la relation entre deux individus au format spécifié.
 
     Format linéaire : chaque saut sur une ligne avec indentation croissante.
+    Affiche les dates de naissance/décès et les deux parents sur la même ligne.
 
     Returns:
         tuple: (degrees, formatted_text, error_message)
@@ -137,9 +162,30 @@ def format_relation(conn, adj, person_a_id, person_b_id):
     # Afficher avec l'offset
     for i, person_id in enumerate([person_a_id] + [p[0] for p in path]):
         ind = get_individual(conn, person_id)
-        name = f"{ind['given_name']} {ind['family_name']}".strip() if ind else person_id
+        if not ind:
+            lines.append("\t" * (indentations[i] + offset) + person_id)
+            continue
+        
+        name = f"{ind['given_name']} {ind['family_name']}".strip()
+        
+        # Dates
+        birth = _format_date(ind['birth_date']) if ind['birth_date'] else ""
+        death = _format_date(ind['death_date']) if ind['death_date'] else ""
+        dates = f" ({birth})" + (f" — ({death})" if death else "")
+        
+        # Parents (père puis mère)
+        father_name, mother_name = get_parents(conn, person_id)
+        parents = ""
+        if father_name and mother_name:
+            parents = f" | Parents: {father_name} & {mother_name}"
+        elif father_name:
+            parents = f" | Père: {father_name}"
+        elif mother_name:
+            parents = f" | Mère: {mother_name}"
+        
+        line = f"{name}{dates}{parents}"
         indent = indentations[i] + offset
-        lines.append("\t" * indent + name)
+        lines.append("\t" * indent + line)
 
     text = "\n".join(lines)
     return degrees, text, None
