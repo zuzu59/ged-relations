@@ -3,6 +3,14 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
+## [0.0.56] — 2026-07-24 à 10h35
+
+### Corrigé
+- **Dates** : Format changé en dd/mm/yy
+- **Parents** : Affichés uniquement pour les personnes intermédiaires (pas pour les extrémités)
+
+---
+
 ## [0.0.55] — 2026-07-24 à 10h30
 
 ### Ajouté
