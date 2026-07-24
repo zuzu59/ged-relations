@@ -3,6 +3,13 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
+## [0.0.54] — 2026-07-24 à 10h25
+
+### Corrigé
+- **Rate limiting** : Remis à 200 req/min (protection + usage familial)
+
+---
+
 ## [0.0.53] — 2026-07-24 à 10h15
 
 ### Corrigé
