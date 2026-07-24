@@ -71,7 +71,7 @@ def generate_pdf(person_a_name, person_b_name, relation_text, conn):
     pdf.ln(5)
 
     # Contenu de la relation (sanitise les caractères unicode)
-    pdf.set_font("Courier", "", 10)
+    pdf.set_font("Helvetica", "", 10)
     for line in relation_text.split("\n"):
         safe_line = _sanitize(line)
         pdf.cell(0, 6, safe_line, 0, 1)
