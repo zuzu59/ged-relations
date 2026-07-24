@@ -160,7 +160,10 @@ def format_relation(conn, adj, person_a_id, person_b_id):
     offset = -min_indent if min_indent < 0 else 0
     
     # Afficher avec l'offset
-    for i, person_id in enumerate([person_a_id] + [p[0] for p in path]):
+    # Les deux extrémités (person_a et person_b) n'ont pas de parents affichés
+    all_person_ids = [person_a_id] + [p[0] for p in path]
+    
+    for i, person_id in enumerate(all_person_ids):
         ind = get_individual(conn, person_id)
         if not ind:
             lines.append("\t" * (indentations[i] + offset) + person_id)
@@ -173,15 +176,18 @@ def format_relation(conn, adj, person_a_id, person_b_id):
         death = _format_date(ind['death_date']) if ind['death_date'] else ""
         dates = f" ({birth})" + (f" — ({death})" if death else "")
         
-        # Parents (père puis mère)
-        father_name, mother_name = get_parents(conn, person_id)
+        # Parents (uniquement pour les personnes intermédiaires, pas les extrémités)
+        # Personne à l'indice 0 = person_a, dernière personne = person_b
+        is_intermediate = i > 0 and i < len(all_person_ids) - 1
         parents = ""
-        if father_name and mother_name:
-            parents = f" | Parents: {father_name} & {mother_name}"
-        elif father_name:
-            parents = f" | Père: {father_name}"
-        elif mother_name:
-            parents = f" | Mère: {mother_name}"
+        if is_intermediate:
+            father_name, mother_name = get_parents(conn, person_id)
+            if father_name and mother_name:
+                parents = f" | Parents: {father_name} & {mother_name}"
+            elif father_name:
+                parents = f" | Père: {father_name}"
+            elif mother_name:
+                parents = f" | Mère: {mother_name}"
         
         line = f"{name}{dates}{parents}"
         indent = indentations[i] + offset
@@ -273,12 +279,16 @@ def search_individuals(conn, query):
 
 
 def _format_date(date_str):
-    """Formater une date YYYY-MM-DD → YYYY ou YYYY-MM."""
+    """Formater une date YYYY-MM-DD → dd/mm/yy."""
     if not date_str:
         return ""
     parts = date_str.split("-")
     if len(parts) >= 3 and parts[0] != "?":
-        return f"{parts[0]}-{parts[1]}-{parts[2]}"
+        # dd/mm/yy
+        day = parts[2][-2:]
+        month = parts[1]
+        year = parts[0][-2:]
+        return f"{day}/{month}/{year}"
     if len(parts) >= 2 and parts[0] != "?":
         return f"{parts[0]}-{parts[1]}"
     return date_str
