@@ -122,6 +122,21 @@ def get_parents(conn, person_id):
     return father_name, mother_name
 
 
+def get_spouse(conn, person_id):
+    """Récupérer le/la conjoint(e) d'un individu via les relations."""
+    row = conn.execute(
+        "SELECT person_b FROM relationships WHERE person_a=? AND rel_type='spouse'", (person_id,)
+    ).fetchone()
+    if not row:
+        return None
+    
+    spouse_id = row[0]
+    s = get_individual(conn, spouse_id)
+    if s:
+        return f"{s['given_name']} {s['family_name']}".strip()
+    return None
+
+
 def format_relation(conn, adj, person_a_id, person_b_id):
     """Formater la relation entre deux individus au format spécifié.
 
@@ -176,20 +191,21 @@ def format_relation(conn, adj, person_a_id, person_b_id):
         death = _format_date(ind['death_date']) if ind['death_date'] else ""
         dates = f" ({birth})" + (f" — ({death})" if death else "")
         
-        # Parents (uniquement pour les personnes intermédiaires, pas les extrémités)
+        # Époux(se) uniquement pour les personnes intermédiaires (pas les extrémités)
         # Personne à l'indice 0 = person_a, dernière personne = person_b
         is_intermediate = i > 0 and i < len(all_person_ids) - 1
-        parents = ""
+        extra_info = ""
         if is_intermediate:
-            father_name, mother_name = get_parents(conn, person_id)
-            if father_name and mother_name:
-                parents = f" | Parents: {father_name} & {mother_name}"
-            elif father_name:
-                parents = f" | Père: {father_name}"
-            elif mother_name:
-                parents = f" | Mère: {mother_name}"
+            spouse = get_spouse(conn, person_id)
+            
+            if spouse:
+                sex = ind['sex']
+                if sex == 'M':
+                    extra_info = f" | épouse: {spouse}"
+                elif sex == 'F':
+                    extra_info = f" | époux: {spouse}"
         
-        line = f"{name}{dates}{parents}"
+        line = f"{name}{dates}{extra_info}"
         indent = indentations[i] + offset
         lines.append("\t" * indent + line)
 
