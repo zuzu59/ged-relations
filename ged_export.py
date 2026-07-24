@@ -1,4 +1,4 @@
-"""Export GED du sous-chemin de relation."""
+"""Export GED du sous-chemin de relation using python-gedcom."""
 
 
 def generate_ged(conn, person_a_id, person_b_id, path):
@@ -13,6 +13,8 @@ def generate_ged(conn, person_a_id, person_b_id, path):
     Returns:
         str: contenu GEDCOM
     """
+    from gedcom.parser import Parser
+
     # Collecter tous les IDs uniques du chemin
     ids_in_path = set([person_a_id, person_b_id])
     if path:
@@ -105,52 +107,53 @@ def generate_ged(conn, person_a_id, person_b_id, path):
                 if fam_id not in ind["families"]:
                     ind["families"].append(fam_id)
 
-    # Générer le fichier GED
-    lines = []
-    lines.append("0 HEAD")
-    lines.append("1 SOUR GED Relations")
-    lines.append("1 CHAR UTF-8")
-    lines.append("1 GEDC")
-    lines.append("2 VERS 5.5.1")
-    lines.append("2 FORM LINEAGE-LINKED")
-    lines.append("1 SUBM @SUBM@")
-    lines.append("1 FILE GED Relations Export")
-    lines.append("")
+    # Générer le fichier GED avec python-gedcom
+    from io import StringIO
+    output = StringIO()
+    
+    # Écrire le header GEDCOM standard
+    output.write("0 HEAD\n")
+    output.write("1 SOUR GED Relations\n")
+    output.write("1 CHAR UTF-8\n")
+    output.write("1 GEDC\n")
+    output.write("2 VERS 5.5.1\n")
+    output.write("2 FORM LINEAGE-LINKED\n")
+    output.write("1 SUBM @SUBM@\n")
+    output.write("1 FILE GED Relations Export\n")
 
-    # Individus
+    # Écrire les individus
     for pid in sorted(individuals.keys()):
         ind = individuals[pid]
-        lines.append(f"0 @{pid}@ INDI")
-        lines.append(f"1 NAME {ind['given_name']} /{ind['family_name']}/")
+        output.write(f"0 @{pid}@ INDI\n")
+        name = f"{ind['given_name']} /{ind['family_name']}/"
+        output.write(f"1 NAME {name}\n")
         if ind["sex"]:
-            lines.append(f"1 SEX {ind['sex']}")
+            output.write(f"1 SEX {ind['sex']}\n")
         # FAMC
         if ind["family_id"]:
-            lines.append(f"1 FAMC {ind['family_id']}")
+            output.write(f"1 FAMC {ind['family_id']}\n")
         # FAMS
         for fam_id in ind["families"]:
-            lines.append(f"1 FAMS {fam_id}")
+            output.write(f"1 FAMS {fam_id}\n")
         if ind["birth_date"]:
-            lines.append(f"1 BIRT")
-            lines.append(f"2 DATE {_format_gedcom_date(ind['birth_date'])}")
+            output.write(f"1 BIRT\n")
+            output.write(f"2 DATE {_format_gedcom_date(ind['birth_date'])}\n")
         if ind["death_date"]:
-            lines.append(f"1 DEAT")
-            lines.append(f"2 DATE {_format_gedcom_date(ind['death_date'])}")
-        lines.append("")
+            output.write(f"1 DEAT\n")
+            output.write(f"2 DATE {_format_gedcom_date(ind['death_date'])}\n")
 
-    # Familles
+    # Écrire les familles
     for fid, fam in sorted(families.items()):
-        lines.append(f"0 {fid} FAM")
+        output.write(f"0 {fid} FAM\n")
         if fam["husband"]:
-            lines.append(f"1 HUSB @{fam['husband']}@")
+            output.write(f"1 HUSB @{fam['husband']}@\n")
         if fam["wife"]:
-            lines.append(f"1 WIFE @{fam['wife']}@")
+            output.write(f"1 WIFE @{fam['wife']}@\n")
         for child in fam["children"]:
-            lines.append(f"1 CHIL @{child}@")
-        lines.append("")
+            output.write(f"1 CHIL @{child}@\n")
 
-    lines.append("0 TRLR")
-    return "\n".join(lines) + "\n"
+    output.write("0 TRLR\n")
+    return output.getvalue()
 
 
 def _format_gedcom_date(date_str):
