@@ -3,6 +3,15 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
+## [0.0.61] — 2026-07-24 à 16h35
+
+### Amélioré
+- **Affichage web** : Police Helvetica (au lieu de Courier)
+- **Affichage web** : Pas de tabulations, juste des espaces pour mobile
+- **Outils** : Script `restart.sh` pour redémarrage propre du serveur
+
+---
+
 ## [0.0.60] — 2026-07-24 à 16h25
 
 ### Amélioré
