@@ -3,6 +3,14 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
+## [0.0.63] — 2026-07-24 à 17h15
+
+### Changé
+- **Import/Export GED** : Migration vers python-gedcom (plus robuste, support UTF-8 natif, GED valide)
+- Suppression de ged4py
+
+---
+
 ## [0.0.62] — 2026-07-24 à 16h45
 
 ### Corrigé
