@@ -24,6 +24,11 @@ class RelationPDF(FPDF):
 def _sanitize(text):
     """Remplacer les caractères non-ASCII par des équivalents ASCII."""
     import unicodedata
+    # Remplacer d'abord les caractères spécifiques
+    text = text.replace("—", "-")  # Tiret cadratin -> tiret simple
+    text = text.replace("–", "-")  # Tiret demi-cadre -> tiret simple
+    text = text.replace("…", "...")  # Points de suspension
+    # Puis normaliser pour les accents
     nfkd = unicodedata.normalize("NFKD", text)
     return "".join(c for c in nfkd if not unicodedata.combining(c))
 
