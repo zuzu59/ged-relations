@@ -41,6 +41,46 @@ def generate_ged(conn, person_a_id, person_b_id, path):
         if len(children) >= 2:
             ids_in_path.add(p_id)
 
+    # 2b. Inclure les époux hors-chemin qui sont parents d'un membre du chemin.
+    #    Sans ça, les familles sont tronquées (un seul parent au lieu de deux).
+    #    Ex: I24 (mère de I25) n'est pas dans le chemin mais est épouse de I23
+    #    qui est dans le chemin. Il faut l'inclure pour que la famille soit complète.
+    for pid in sorted(ids_in_path):
+        sp = conn.execute(
+            "SELECT spouse_ids FROM individuals WHERE id=?", (pid,)
+        ).fetchone()
+        if not sp or not sp[0]:
+            continue
+        for sp_id in sp[0].split(","):
+            sp_id = sp_id.strip()
+            if not sp_id or sp_id in ids_in_path:
+                continue
+            # Vérifier si ce spouse est le parent (père ou mère) d'un membre du chemin
+            is_parent_of_child = False
+            for child_pid in ids_in_path:
+                cpr = conn.execute(
+                    "SELECT father_id, mother_id FROM individuals WHERE id=?", (child_pid,)
+                ).fetchone()
+                if cpr and ((cpr[0] and cpr[0] == sp_id) or (cpr[1] and cpr[1] == sp_id)):
+                    is_parent_of_child = True
+                    break
+            if is_parent_of_child:
+                ids_in_path.add(sp_id)
+
+    # 2c. Expansion de parents : pour que chaque individu ait un FAMC, ajouter
+    #    ses parents à ids_in_path. Ça garantit que le viewer peut connecter
+    #    chaque individu à l'arbre "montant".
+    #    On fait une passe unique pour éviter les boucles infinies.
+    current_ids = set(ids_in_path)
+    for pid in current_ids:
+        pr = conn.execute(
+            "SELECT father_id, mother_id FROM individuals WHERE id=?", (pid,)
+        ).fetchone()
+        if pr:
+            for p_id in (pr[0] or "", pr[1] or ""):
+                if p_id and p_id not in ids_in_path:
+                    ids_in_path.add(p_id)
+
     # 3. Récupérer les individus
     individuals = {}
     for pid in ids_in_path:
@@ -61,9 +101,9 @@ def generate_ged(conn, person_a_id, person_b_id, path):
     if not individuals:
         return ""
 
-    # 4. Construire les familles
-    #    Règle: créer une famille par paire de parents (ou seul parent) ayant
-    #    au moins un enfant dans le set. Les parents doivent être dans le set.
+    # 4. Construire les familles (une seule passe : parents + enfants ensemble)
+    #    On crée une famille par paire de parents ayant au moins un enfant dans le set.
+    #    Si un seul parent est dans le set, on crée une famille avec ce seul parent.
     families = {}
     fam_id_map = {}  # (husband, wife) -> fam_id
     next_fam_id = 1
@@ -84,19 +124,8 @@ def generate_ged(conn, person_a_id, person_b_id, path):
     def in_set(x):
         return bool(x) and x in ids_in_path
 
-    # 4a. Couples : les DEUX époux dans le set
-    for pid in sorted(ids_in_path):
-        sp = conn.execute(
-            "SELECT spouse_ids FROM individuals WHERE id=?", (pid,)
-        ).fetchone()
-        if sp and sp[0]:
-            for sp_id in sp[0].split(","):
-                sp_id = sp_id.strip()
-                if sp_id and sp_id in ids_in_path:
-                    h, w = sorted([pid, sp_id])
-                    ensure_family(h, w)
-
     # 4b. Parent-enfant : créer famille pour chaque enfant avec ses parents
+    #    (les couples époux sont créés implicitement quand les deux parents + un enfant sont dans le set)
     for pid in sorted(ids_in_path):
         pr = conn.execute(
             "SELECT father_id, mother_id FROM individuals WHERE id=?", (pid,)

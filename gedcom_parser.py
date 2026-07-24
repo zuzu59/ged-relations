@@ -68,38 +68,18 @@ def parse_gedcom(filepath):
     
     parser = Parser()
     
-    # Corriger le double encodage UTF-8 (MyHeritage)
-    # Le fichier a des caractères encodés 2x en UTF-8 (é → Ã©, ç → Ã§, etc.)
+    # Corriger le double encodage UTF-8 (fréquent avec MyHeritage) avec ftfy
+    import ftfy
     with open(filepath, 'rb') as f:
         raw = f.read()
     
-    # Décoder une fois (donne texte avec Ã©, Ã§, etc.)
+    # Décoder une fois, puis ftfy corrige proprement tous les doubles encodages
     text = raw.decode('utf-8', errors='replace')
-    
-    # Remplacer les séquences de double encodage courantes
-    replacements = {
-        '\u00c3\u00a9': '\u00e9',  # Ã© → é
-        '\u00c3\u00ab': '\u00eb',  # Ã« → ë
-        '\u00c3\u00aa': '\u00ea',  # Ãª → ê
-        '\u00c3\u00a7': '\u00e7',  # Ã§ → ç
-        '\u00c3\u00b4': '\u00f4',  # Ã´ → ô
-        '\u00c3\u00ae': '\u00ee',  # Ã® → ï
-        '\u00c3\u00af': '\u00ef',  # Ã¯ → ï
-        '\u00c3\u00a0': '\u00e0',  # Ã  → à
-        '\u00c3\u00b9': '\u00f9',  # Ã¹ → ù
-        '\u00c3\u00bc': '\u00fc',  # Ã¼ → ü
-        '\u00c3\u00a4': '\u00e4',  # Ã¤ → ä
-        '\u00c3\u00b6': '\u00f6',  # Ã¶ → ö
-        '\u00c3\u009f': '\u00df',  # ÃŸ → ß
-        '\u00c3\u0083\u00a9': '\u00e9',  # Triple: Ã© (si déjà partiellement corrigé)
-    }
-    
-    for bad, good in replacements.items():
-        text = text.replace(bad, good)
+    fixed = ftfy.fix_text(text)
     
     # Passer le texte corrigé à python-gedcom via BytesIO
     from io import BytesIO
-    parser.parse(BytesIO(text.encode('utf-8')), strict=False)
+    parser.parse(BytesIO(fixed.encode('utf-8')), strict=False)
     
     elements = parser.get_element_list()
     

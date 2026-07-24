@@ -3,6 +3,23 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
+## [0.0.67] — 2026-07-25 à 01h15
+
+### Corrigé
+- **Export GED** : Chaque individu a maintenant un FAMC — expansion automatique des parents pour connecter l'arbre "montant" dans le viewer
+- **Export GED** : Plus de familles orphelines ni de familles dupliquées
+- **Export GED** : Les époux hors-chemin qui sont parents d'un membre du chemin sont maintenant inclus (ex: I24 mère de I25)
+
+---
+
+## [0.0.66] — 2026-07-25 à 01h00
+
+### Corrigé
+- **Export GED** : Suppression des familles en double (F0001/F0002 vs F0006/F0007)
+- **Export GED** : Création des familles en une seule passe (parents + enfants ensemble)
+
+---
+
 ## [0.0.65] — 2026-07-24 à 19h55
 
 ### Corrigé

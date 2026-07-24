@@ -18,7 +18,8 @@ done
 
 # 3. Redémarrer le serveur
 cd /home/ubuntu/dev/ged-relations
-nohup .venv/bin/python app.py tomo-final.ged > /tmp/srv.log 2>&1 &
+GED_FILE="${1:-/home/ubuntu/dev/tomo-250606.ged}"
+nohup .venv/bin/python app.py "$GED_FILE" > /tmp/srv.log 2>&1 &
 
 # 4. Attendre que le serveur démarrer
 echo "   Démarrage en cours..."
