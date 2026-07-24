@@ -67,14 +67,46 @@ def parse_gedcom(filepath):
     families = {}
     
     parser = Parser()
-    parser.parse_file(filepath, strict=False)
+    
+    # Corriger le double encodage UTF-8 (MyHeritage)
+    # Le fichier a des caractères encodés 2x en UTF-8 (é → Ã©, ç → Ã§, etc.)
+    with open(filepath, 'rb') as f:
+        raw = f.read()
+    
+    # Décoder une fois (donne texte avec Ã©, Ã§, etc.)
+    text = raw.decode('utf-8', errors='replace')
+    
+    # Remplacer les séquences de double encodage courantes
+    replacements = {
+        '\u00c3\u00a9': '\u00e9',  # Ã© → é
+        '\u00c3\u00ab': '\u00eb',  # Ã« → ë
+        '\u00c3\u00aa': '\u00ea',  # Ãª → ê
+        '\u00c3\u00a7': '\u00e7',  # Ã§ → ç
+        '\u00c3\u00b4': '\u00f4',  # Ã´ → ô
+        '\u00c3\u00ae': '\u00ee',  # Ã® → ï
+        '\u00c3\u00af': '\u00ef',  # Ã¯ → ï
+        '\u00c3\u00a0': '\u00e0',  # Ã  → à
+        '\u00c3\u00b9': '\u00f9',  # Ã¹ → ù
+        '\u00c3\u00bc': '\u00fc',  # Ã¼ → ü
+        '\u00c3\u00a4': '\u00e4',  # Ã¤ → ä
+        '\u00c3\u00b6': '\u00f6',  # Ã¶ → ö
+        '\u00c3\u009f': '\u00df',  # ÃŸ → ß
+        '\u00c3\u0083\u00a9': '\u00e9',  # Triple: Ã© (si déjà partiellement corrigé)
+    }
+    
+    for bad, good in replacements.items():
+        text = text.replace(bad, good)
+    
+    # Passer le texte corrigé à python-gedcom via BytesIO
+    from io import BytesIO
+    parser.parse(BytesIO(text.encode('utf-8')), strict=False)
     
     elements = parser.get_element_list()
     
     # 1. Parser les individus
     for elem in elements:
         if elem.get_level() == 0 and elem.get_tag() == 'INDI':
-            ind_id = elem.get_pointer()
+            ind_id = elem.get_pointer().strip('@')  # Nettoyer les @
             given_name = ""
             family_name = ""
             sex = ""
@@ -101,10 +133,12 @@ def parse_gedcom(filepath):
                     sex = value.strip()
                     
                 elif tag == 'FAMC':
-                    father_id = value.strip().lstrip('@').rstrip('@')
+                    # Note la famille de l'enfant (sera mis à jour après parsing des familles)
+                    famc_id = value.strip().strip('@')
+                    # On ne met pas directement father_id, on le mettra après
                     
                 elif tag == 'FAMS':
-                    fam_id = value.strip().lstrip('@').rstrip('@')
+                    fam_id = value.strip().strip('@')
                     families_list.append(fam_id)
                     
                 elif tag == 'BIRT':
@@ -133,7 +167,7 @@ def parse_gedcom(filepath):
     # 2. Parser les familles
     for elem in elements:
         if elem.get_level() == 0 and elem.get_tag() == 'FAM':
-            fam_id = elem.get_pointer()
+            fam_id = elem.get_pointer().strip('@')  # Nettoyer les @
             husband_id = ""
             wife_id = ""
             children_ids = []
@@ -143,19 +177,12 @@ def parse_gedcom(filepath):
                 value = child.get_value() or ""
                 
                 if tag == 'HUSB':
-                    husband_id = value.strip().lstrip('@').rstrip('@')
+                    husband_id = value.strip().strip('@')
                 elif tag == 'WIFE':
-                    wife_id = value.strip().lstrip('@').rstrip('@')
+                    wife_id = value.strip().strip('@')
                 elif tag == 'CHIL':
-                    child_id = value.strip().lstrip('@').rstrip('@')
+                    child_id = value.strip().strip('@')
                     children_ids.append(child_id)
-                    
-                    # Mettre à jour les individus avec les parents
-                    if child_id in individuals:
-                        if not individuals[child_id]["father_id"] and husband_id:
-                            individuals[child_id]["father_id"] = husband_id
-                        if not individuals[child_id]["mother_id"] and wife_id:
-                            individuals[child_id]["mother_id"] = wife_id
             
             families[fam_id] = {
                 "id": fam_id,
@@ -164,6 +191,19 @@ def parse_gedcom(filepath):
                 "children": children_ids,
             }
     
+    # 3. Mettre à jour les individus avec les parents corrects
+    # Pour chaque famille, mettre à jour les enfants avec les bons parents
+    for fam_id, fam in families.items():
+        husband = fam["husband"]
+        wife = fam["wife"]
+        for child_id in fam["children"]:
+            if child_id in individuals:
+                # Mettre à jour father_id et mother_id si pas déjà définis
+                if not individuals[child_id]["father_id"] and husband:
+                    individuals[child_id]["father_id"] = husband
+                if not individuals[child_id]["mother_id"] and wife:
+                    individuals[child_id]["mother_id"] = wife
+    
     return individuals, families
 
 
@@ -171,11 +211,22 @@ def init_db(db_path=None):
     """Créer la base SQLite avec les tables nécessaires."""
     if db_path is None:
         db_path = DB_PATH
+    
+    # Supprimer la base de données existante pour éviter les problèmes d'encodage
+    import os
+    if os.path.exists(db_path):
+        os.remove(db_path)
+    if os.path.exists(db_path + '-wal'):
+        os.remove(db_path + '-wal')
+    if os.path.exists(db_path + '-shm'):
+        os.remove(db_path + '-shm')
+    
     conn = sqlite3.connect(db_path, check_same_thread=False)
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
+    
     conn.executescript("""
-        CREATE TABLE IF NOT EXISTS individuals (
+        CREATE TABLE individuals (
             id TEXT PRIMARY KEY,
             given_name TEXT NOT NULL,
             family_name TEXT NOT NULL,
@@ -190,7 +241,7 @@ def init_db(db_path=None):
             families TEXT DEFAULT ''
         );
         
-        CREATE TABLE IF NOT EXISTS families (
+        CREATE TABLE families (
             id TEXT PRIMARY KEY,
             husband_id TEXT,
             wife_id TEXT,
@@ -199,7 +250,7 @@ def init_db(db_path=None):
             marriage_place TEXT
         );
         
-        CREATE TABLE IF NOT EXISTS relationships (
+        CREATE TABLE relationships (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             person_a TEXT NOT NULL,
             person_b TEXT NOT NULL,
@@ -207,9 +258,9 @@ def init_db(db_path=None):
             UNIQUE(person_a, person_b, rel_type)
         );
         
-        CREATE INDEX IF NOT EXISTS idx_individuals_search ON individuals(search_name);
-        CREATE INDEX IF NOT EXISTS idx_relationships_person_a ON relationships(person_a);
-        CREATE INDEX IF NOT EXISTS idx_relationships_person_b ON relationships(person_b);
+        CREATE INDEX idx_individuals_search ON individuals(search_name);
+        CREATE INDEX idx_relationships_person_a ON relationships(person_a);
+        CREATE INDEX idx_relationships_person_b ON relationships(person_b);
     """)
     return conn
 

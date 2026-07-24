@@ -3,6 +3,13 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
+## [0.0.65] — 2026-07-24 à 19h55
+
+### Corrigé
+- **Import GED** : Correction du double encodage UTF-8 (MyHeritage) — les accents (é, è, ê, ë, à, ç, etc.) sont maintenant correctement importés
+
+---
+
 ## [0.0.64] — 2026-07-24 à 19h48
 
 ### Corrigé
