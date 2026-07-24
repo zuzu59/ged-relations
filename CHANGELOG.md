@@ -3,6 +3,14 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
+## [0.0.60] — 2026-07-24 à 16h25
+
+### Amélioré
+- **Format relation** : Suppression de 'épouse:' dans l'affichage
+- **Export PDF** : Format landscape (paysage) pour plus de place
+
+---
+
 ## [0.0.59] — 2026-07-24 à 16h15
 
 ### Amélioré
