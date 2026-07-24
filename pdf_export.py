@@ -47,7 +47,7 @@ def generate_pdf(person_a_name, person_b_name, relation_text, conn):
     """
     pdf = RelationPDF()
     pdf.alias_nb_pages()
-    pdf.add_page()
+    pdf.add_page(orientation='L')  # Paysage (landscape)
 
     # En-tête avec les deux individus
     pdf.set_font("Helvetica", "B", 12)

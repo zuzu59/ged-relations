@@ -214,7 +214,7 @@ def format_relation(conn, adj, person_a_id, person_b_id):
                 # Toujours afficher l'homme en premier, suivi de la femme
                 if sex == 'M':
                     # L'individu est un homme, afficher son épouse
-                    extra_info = f" | épouse: {spouse_name}{spouse_dates}"
+                    extra_info = f" | {spouse_name}{spouse_dates}"
                 elif sex == 'F':
                     # L'individu est une femme, afficher son MARI EN PREMIER comme sujet, puis elle
                     # Récupérer les infos du mari
@@ -238,7 +238,7 @@ def format_relation(conn, adj, person_a_id, person_b_id):
                     # Remplacer le nom de la femme par celui du mari dans la ligne
                     name = husband_name
                     dates = husband_dates
-                    extra_info = f" | épouse: {wife_name}{wife_dates}"
+                    extra_info = f" | {wife_name}{wife_dates}"
         
         line = f"{name}{dates}{extra_info}"
         indent = indentations[i] + offset
