@@ -61,17 +61,18 @@ def _load_db(ged_path=None):
 # Rate limiting simple par IP
 _rate_limits = {}
 _rate_lock = threading.Lock()
-MAX_REQUESTS = 10
+MAX_REQUESTS = 1000  # Très permissif pour usage familial
 RATE_WINDOW = 60  # secondes
+RATE_LIMIT_ENABLED = False  # Désactivé par défaut pour usage local
 
 
 def _check_rate_limit(ip):
     """Vérifier le rate limiting. Retourne True si autorisé."""
-    now = int(threading.current_thread().ident)  # approximation
+    if not RATE_LIMIT_ENABLED:
+        return True  # Désactivé
     with _rate_lock:
-        limits = _rate_limits.get(ip, [])
-        # Nettoyer les anciennes entrées
         import time
+        limits = _rate_limits.get(ip, [])
         cutoff = time.time() - RATE_WINDOW
         limits = [t for t in limits if t > cutoff]
         if len(limits) >= MAX_REQUESTS:
