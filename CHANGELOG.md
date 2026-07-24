@@ -3,6 +3,15 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
+## [0.0.64] — 2026-07-24 à 19h48
+
+### Corrigé
+- **Export GED** : Suppression des individus hors chemin (ancêtres superflus, spouses non connecteurs)
+- **Export GED** : Ajout des parents connecteurs (relient 2+ personnes du chemin) pour garder la structure familiale
+- **Export GED** : Families correctement créées avec un seul parent quand l'autre est hors chemin
+
+---
+
 ## [0.0.63] — 2026-07-24 à 17h15
 
 ### Changé
