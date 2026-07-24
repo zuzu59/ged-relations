@@ -3,6 +3,16 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
+## [0.0.57] — 2026-07-24 à 16h05
+
+### Ajouté
+- **Encodage** : Correction du double encodage UTF-8 dans les fichiers GEDCOM
+- **Dates** : Format changé en dd/mm/yyyy (4 chiffres pour l'année)
+- **Époux(se)** : L'homme est toujours affiché en premier, suivi de la femme
+- **Dates des conjoints** : Affichées à côté du nom de l'époux(se)
+
+---
+
 ## [0.0.56] — 2026-07-24 à 10h35
 
 ### Corrigé
