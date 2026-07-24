@@ -3,6 +3,13 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
+## [0.0.58] — 2026-07-24 à 16h15
+
+### Corrigé
+- **Export PDF** : Support du tiret cadratin `—` et autres caractères spéciaux
+
+---
+
 ## [0.0.57] — 2026-07-24 à 16h05
 
 ### Ajouté
