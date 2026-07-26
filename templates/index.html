@@ -38,10 +38,15 @@
         <div class="search-field__results" id="results2" hidden></div>
     </div>
 
-    <!-- Bouton calculer -->
-    <button id="btnCalc" class="btn btn--primary btn--full" disabled>
-        Calculer la relation
-    </button>
+    <!-- Boutons calculer -->
+    <div class="btn-group">
+        <button id="btnCalc" class="btn btn--primary btn--full" disabled>
+            Relations avec parents
+        </button>
+        <button id="btnCalcDirect" class="btn btn--secondary btn--full" disabled>
+            Relations directes
+        </button>
+    </div>
 </div>
 
 <!-- Résultat -->
@@ -70,8 +75,11 @@
     initSearch('person1', 'results1', (data) => { person1 = data; updateCalcBtn(); });
     initSearch('person2', 'results2', (data) => { person2 = data; updateCalcBtn(); });
 
-    // Bouton calculer
+    // Bouton calculer - relations avec parents
     document.getElementById('btnCalc').addEventListener('click', calculateRelation);
+
+    // Bouton calculer - relations directes
+    document.getElementById('btnCalcDirect').addEventListener('click', calculateRelationDirect);
 
     // Boutons export
     document.getElementById('btnPdf').addEventListener('click', exportPdf);
@@ -90,7 +98,9 @@
     });
 
     function updateCalcBtn() {
-        document.getElementById('btnCalc').disabled = !(person1 && person2);
+        const enabled = !!(person1 && person2);
+        document.getElementById('btnCalc').disabled = !enabled;
+        document.getElementById('btnCalcDirect').disabled = !enabled;
     }
 
     async function calculateRelation() {
@@ -126,6 +136,46 @@
                 // Stocker les IDs pour l'export
                 content.dataset.idA = person1.id;
                 content.dataset.idB = person2.id;
+                content.dataset.mode = 'full';
+            }
+        } catch (err) {
+            content.innerHTML = '';
+            error.hidden = false;
+            error.textContent = 'Erreur de calcul. Réessayez.';
+        }
+    }
+
+    async function calculateRelationDirect() {
+        if (!person1 || !person2) return;
+
+        const section = document.getElementById('resultSection');
+        const content = document.getElementById('resultContent');
+        const exports = document.getElementById('resultExports');
+        const error = document.getElementById('resultError');
+
+        section.hidden = false;
+        error.hidden = true;
+        exports.hidden = true;
+        content.innerHTML = '<div class="loading">Calcul en cours...</div>';
+
+        try {
+            const resp = await fetch('/api/relation-direct', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_a: person1.id, id_b: person2.id })
+            });
+            const data = await resp.json();
+
+            if (data.error) {
+                content.innerHTML = '';
+                error.hidden = false;
+                error.textContent = data.error;
+            } else {
+                const formattedText = data.text.replace(/\t/g, ' ');
+                content.textContent = formattedText;
+                content.dataset.idA = person1.id;
+                content.dataset.idB = person2.id;
+                content.dataset.mode = 'direct';
             }
         } catch (err) {
             content.innerHTML = '';

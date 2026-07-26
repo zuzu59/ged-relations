@@ -13,7 +13,7 @@ from version import get_version_and_date
 from gedcom_parser import load_gedcom, DB_PATH
 from graph import (
     build_adjacency, search_individuals, format_relation,
-    get_individual, find_shortest_path,
+    get_individual, find_shortest_path, format_relation_direct,
 )
 from pdf_export import generate_pdf
 from ged_export import generate_ged
@@ -39,7 +39,8 @@ def _load_db(ged_path=None):
         _ged_file = ged_path
         conn, count = load_gedcom(ged_path)
         _db = conn
-        print(f"[GED] Chargé {count} individus depuis {ged_path}")
+        fam_count = _db.execute('SELECT COUNT(*) FROM families').fetchone()[0]
+        print(f"[GED] Chargé {count} individus, {fam_count} familles depuis {ged_path}")
     else:
         # Essayer le fichier par défaut
         default_ged = os.path.join(os.path.dirname(__file__), "test_data.ged")
@@ -47,7 +48,8 @@ def _load_db(ged_path=None):
             conn, count = load_gedcom(default_ged)
             _db = conn
             _ged_file = default_ged
-            print(f"[GED] Chargé {count} individus depuis {default_ged}")
+            fam_count = _db.execute('SELECT COUNT(*) FROM families').fetchone()[0]
+            print(f"[GED] Chargé {count} individus, {fam_count} familles depuis {default_ged}")
         else:
             # Base vide — on crée quand même la connexion
             from gedcom_parser import init_db
@@ -186,6 +188,30 @@ def api_relation():
         return jsonify({"error": "IDs manquants"}), 400
 
     degrees, text, error = format_relation(_db, _adj, id_a, id_b)
+
+    if error:
+        return jsonify({"error": error, "degrees": degrees, "text": text})
+
+    return jsonify({"degrees": degrees, "text": text})
+
+
+@app.route("/api/relation-direct", methods=["POST"])
+def api_relation_direct():
+    """Calculer la relation directe (chemin sans époux/se) entre deux individus."""
+    if not _check_rate_limit(request.remote_addr):
+        return jsonify({"error": "Trop de requêtes. Réessayez dans 1 minute."}), 429
+
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Données manquantes"}), 400
+
+    id_a = data.get("id_a")
+    id_b = data.get("id_b")
+
+    if not id_a or not id_b:
+        return jsonify({"error": "IDs manquants"}), 400
+
+    degrees, text, error = format_relation_direct(_db, _adj, id_a, id_b)
 
     if error:
         return jsonify({"error": error, "degrees": degrees, "text": text})

@@ -341,6 +341,12 @@ body {
     width: 100%;
 }
 
+.btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
 /* Result section */
 .result-section {
     margin-top: 2rem;

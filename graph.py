@@ -248,6 +248,69 @@ def format_relation(conn, adj, person_a_id, person_b_id):
     return degrees, text, None
 
 
+def format_relation_direct(conn, adj, person_a_id, person_b_id):
+    """Formater la relation directe entre deux individus (chemin sans époux/se ni double parent).
+
+    Format linéaire : chaque saut sur une ligne avec indentation,
+    mais sans afficher les époux(se) ni les deux parents pour chaque personne.
+    Affiche uniquement : nom + relation vers le suivant (père/mère/fils/fille).
+
+    Returns:
+        tuple: (degrees, formatted_text, error_message)
+    """
+    if person_a_id == person_b_id:
+        return 0, "Il s'agit de la même personne.", None
+
+    path, degrees = find_shortest_path(adj, person_a_id, person_b_id)
+    if path is None:
+        return -1, "Aucun lien de parenté trouvé entre ces deux individus.", None
+
+    # Calculer les indentations (montée = +1, descente = -1)
+    indentations = [0]  # Person A à 0
+    current = 0
+    for person_id, rel_label in path:
+        if rel_label in ("père", "mère"):
+            current += 1
+        elif rel_label in ("fils", "fille"):
+            current -= 1
+        indentations.append(current)
+
+    # Ajuster pour que tout soit >= 0
+    min_indent = min(indentations)
+    offset = -min_indent if min_indent < 0 else 0
+
+    all_person_ids = [person_a_id] + [p[0] for p in path]
+
+    # Première ligne : Person A
+    lines = [f"Lien de parenté : {degrees} degré(s)", ""]
+    ind_a = get_individual(conn, person_a_id)
+    if ind_a:
+        name_a = f"{ind_a['given_name']} {ind_a['family_name']}".strip()
+        lines.append(name_a)
+    else:
+        lines.append(person_a_id)
+
+    # Pour chaque étape du chemin
+    for i, (person_id, rel_label) in enumerate(path):
+        ind = get_individual(conn, person_id)
+        if not ind:
+            lines.append("\t" * (indentations[i + 1] + offset) + f"{rel_label} : {person_id}")
+            continue
+
+        name = f"{ind['given_name']} {ind['family_name']}".strip()
+        indent = indentations[i + 1] + offset
+
+        # Si c'est la dernière étape (on arrive à person B), pas de nom après
+        if i == len(path) - 1:
+            lines.append("\t" * indent + f"{rel_label} : {name}")
+        else:
+            # Pour les étapes intermédiaires, afficher le nom après la relation
+            lines.append("\t" * indent + f"{rel_label} : {name}")
+
+    text = "\n".join(lines)
+    return degrees, text, None
+
+
 def search_individuals(conn, query):
     """Recherche full-text avec sous-chaînes sur nom + prénom.
 
