@@ -253,7 +253,7 @@ def format_relation_direct(conn, adj, person_a_id, person_b_id):
 
     Format linéaire : chaque saut sur une ligne avec indentation,
     mais sans afficher les époux(se) ni les deux parents pour chaque personne.
-    Affiche uniquement : nom + relation vers le suivant (père/mère/fils/fille).
+    Affiche uniquement les noms avec indentation (pas de préfixe père/mère/fils/fille).
 
     Returns:
         tuple: (degrees, formatted_text, error_message)
@@ -290,22 +290,17 @@ def format_relation_direct(conn, adj, person_a_id, person_b_id):
     else:
         lines.append(person_a_id)
 
-    # Pour chaque étape du chemin
-    for i, (person_id, rel_label) in enumerate(path):
+    # Pour chaque étape du chemin (sans préfixes)
+    for i in range(len(path)):
+        person_id = path[i][0]
         ind = get_individual(conn, person_id)
         if not ind:
-            lines.append("\t" * (indentations[i + 1] + offset) + f"{rel_label} : {person_id}")
+            lines.append("\t" * (indentations[i + 1] + offset) + person_id)
             continue
 
         name = f"{ind['given_name']} {ind['family_name']}".strip()
         indent = indentations[i + 1] + offset
-
-        # Si c'est la dernière étape (on arrive à person B), pas de nom après
-        if i == len(path) - 1:
-            lines.append("\t" * indent + f"{rel_label} : {name}")
-        else:
-            # Pour les étapes intermédiaires, afficher le nom après la relation
-            lines.append("\t" * indent + f"{rel_label} : {name}")
+        lines.append("\t" * indent + name)
 
     text = "\n".join(lines)
     return degrees, text, None

@@ -3,15 +3,14 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
-## [0.0.70] — 2026-07-26 à 17h15
+## [0.0.71] — 2026-07-26 à 17h25
 
-### Ajouté
-- **Fichier GED plus gros** : Support du fichier `bourgeoisie_extraction_78_individus.ged` (36 Mo, 1 405 312 lignes, 27 360 individus, 14 047 familles)
-- **Timeout augmenté** : Le script `restart.sh` attend maintenant 60 secondes au lieu de 10 pour les fichiers volumineux
-- **Statistiques dans restart.sh** : Le script affiche maintenant les statistiques de chargement (individus, familles, relations) à chaque démarrage
-- **Ordre des boutons inversé** : "Relations directes" en premier, puis "Relations avec parents"
+### Modifié
+- **Relations directes** : Suppression des préfixes "père", "mère", "fils", "fille". Affichage épuré avec uniquement les noms et l'indentation.
 
 ---
+
+## [0.0.70] — 2026-07-26 à 17h15
 
 ## [0.0.69] — 2026-07-25 à 14h35
 
