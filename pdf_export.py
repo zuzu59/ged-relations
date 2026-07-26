@@ -33,25 +33,17 @@ def _sanitize(text):
     return "".join(c for c in nfkd if not unicodedata.combining(c))
 
 
-def generate_pdf(person_a_name, person_b_name, relation_text, conn):
-    """Générer un PDF du résultat de relation.
+def _add_relation_block(pdf, title, relation_text):
+    """Ajouter un bloc de relation avec titre, contenu et pied de page.
 
     Args:
-        person_a_name: nom de l'individu A
-        person_b_name: nom de l'individu B
-        relation_text: texte formaté de la relation
-        conn: connexion SQLite (pour récupérer les infos)
-
-    Returns:
-        bytes: contenu PDF
+        pdf: instance FPDF
+        title: titre du bloc (ex: 'Relations directes', 'Relations avec parents')
+        relation_text: texte de la relation à afficher
     """
-    pdf = RelationPDF()
-    pdf.alias_nb_pages()
-    pdf.add_page(orientation='L')  # Paysage (landscape)
-
-    # En-tête avec les deux individus
+    # Titre du bloc
     pdf.set_font("Helvetica", "B", 12)
-    pdf.cell(0, 8, f"{person_a_name}  <->  {person_b_name}", 0, 1, "C")
+    pdf.cell(0, 8, title, 0, 1, "C")
     pdf.ln(3)
 
     # Date d'export avec heure
@@ -82,5 +74,30 @@ def generate_pdf(person_a_name, person_b_name, relation_text, conn):
     pdf.set_font("Helvetica", "I", 8)
     pdf.cell(0, 6, f"Application GED Relations v{version_info['version']}", 0, 1, "C")
     pdf.cell(0, 6, f"Développé le {version_info['build_date']}", 0, 1, "C")
+
+
+def generate_pdf(person_a_name, person_b_name, relation_full, relation_direct, conn):
+    """Générer un PDF du résultat de relation avec 2 pages.
+
+    Args:
+        person_a_name: nom de l'individu A
+        person_b_name: nom de l'individu B
+        relation_full: texte formaté complet (avec parents et époux(se))
+        relation_direct: texte formaté épuré (relations directes uniquement)
+        conn: connexion SQLite (pour récupérer les infos)
+
+    Returns:
+        bytes: contenu PDF
+    """
+    pdf = RelationPDF()
+    pdf.alias_nb_pages()
+    pdf.add_page(orientation='L')  # Paysage (landscape)
+
+    # Page 1 : Relations directes
+    _add_relation_block(pdf, "Relations directes", relation_direct)
+
+    # Page 2 : Relations avec parents
+    pdf.add_page(orientation='L')
+    _add_relation_block(pdf, "Relations avec parents", relation_full)
 
     return bytes(pdf.output(dest='S'))

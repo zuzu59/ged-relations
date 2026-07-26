@@ -221,7 +221,7 @@ def api_relation_direct():
 
 @app.route("/api/export/pdf", methods=["POST"])
 def api_export_pdf():
-    """Exporter la relation en PDF."""
+    """Exporter la relation en PDF (2 pages : directes + avec parents)."""
     data = request.get_json()
     if not data:
         return jsonify({"error": "Données manquantes"}), 400
@@ -232,8 +232,12 @@ def api_export_pdf():
     if not id_a or not id_b:
         return jsonify({"error": "IDs manquants"}), 400
 
-    degrees, text, error = format_relation(_db, _adj, id_a, id_b)
+    # Calculer les deux formats
+    degrees_full, text_full, error = format_relation(_db, _adj, id_a, id_b)
+    if error:
+        return jsonify({"error": error}), 400
 
+    degrees_direct, text_direct, error = format_relation_direct(_db, _adj, id_a, id_b)
     if error:
         return jsonify({"error": error}), 400
 
@@ -246,7 +250,7 @@ def api_export_pdf():
     now = datetime.now()
     date_str = now.strftime("%y%m%d.%H%M")
     filename = f"{name_a}-{name_b}-{date_str}.pdf".replace(" ", "_")
-    pdf_bytes = generate_pdf(name_a, name_b, text, _db)
+    pdf_bytes = generate_pdf(name_a, name_b, text_full, text_direct, _db)
 
     return Response(
         pdf_bytes,

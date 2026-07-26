@@ -3,13 +3,14 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
-## [0.0.68] — 2026-07-25 à 14h30
+## [0.0.69] — 2026-07-25 à 14h35
 
-### Ajouté
-- **Bouton "Relations directes"** : nouveau mode d'affichage épuré du chemin de parenté, sans afficher les époux(se) ni les deux parents pour chaque intermédiaire. Seul le nom et la relation directe (père/mère/fils/fille) entre chaque maillon du chemin sont affichés.
-- **Endpoint API `/api/relation-direct`** : nouvelle API pour calculer la relation directe sans les informations annexes.
+### Modifié
+- **Export PDF** : Le PDF exporté contient maintenant 2 pages — page 1 : Relations directes (affichage épuré), page 2 : Relations avec parents (affichage complet avec époux(se)). Les deux pages ont le même en-tête.
 
 ---
+
+## [0.0.68] — 2026-07-25 à 14h30
 
 ## [0.0.67] — 2026-07-25 à 01h15
 
