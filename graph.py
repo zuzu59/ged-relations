@@ -383,7 +383,7 @@ def format_relation_direct(conn, adj, person_a_id, person_b_id):
     (pas d'époux/se), avec au plus un changement de direction (monter puis descendre).
 
     Format linéaire : chaque saut sur une ligne avec indentation,
-    affichant uniquement les noms sans préfixes.
+    affichant les noms avec les dates de naissance/décès.
 
     Returns:
         tuple: (degrees, formatted_text, error_message)
@@ -417,11 +417,14 @@ def format_relation_direct(conn, adj, person_a_id, person_b_id):
     ind_a = get_individual(conn, person_a_id)
     if ind_a:
         name_a = f"{ind_a['given_name']} {ind_a['family_name']}".strip()
-        lines.append(name_a)
+        birth = _format_date(ind_a['birth_date']) if ind_a['birth_date'] else ""
+        death = _format_date(ind_a['death_date']) if ind_a['death_date'] else ""
+        dates = f" ({birth})" + (f" — ({death})" if death else "")
+        lines.append(f"{name_a}{dates}")
     else:
         lines.append(person_a_id)
 
-    # Pour chaque étape du chemin (sans préfixes)
+    # Pour chaque étape du chemin (avec dates)
     for i in range(len(path)):
         person_id = path[i][0]
         ind = get_individual(conn, person_id)
@@ -430,15 +433,19 @@ def format_relation_direct(conn, adj, person_a_id, person_b_id):
             continue
 
         name = f"{ind['given_name']} {ind['family_name']}".strip()
+        birth = _format_date(ind['birth_date']) if ind['birth_date'] else ""
+        death = _format_date(ind['death_date']) if ind['death_date'] else ""
+        dates = f" ({birth})" + (f" — ({death})" if death else "")
+        
         indent = indentations[i + 1] + offset
-        lines.append("\t" * indent + name)
+        lines.append("\t" * indent + f"{name}{dates}")
 
     text = "\n".join(lines)
     return degrees, text, None
 
 
 def search_individuals(conn, query):
-    """Recherche full-text avec sous-chaînes sur nom + prénom.
+    """Recherche full-text avec sous-chaînes sur nom, prénom, dates et id.
 
     Args:
         conn: connexion SQLite
@@ -459,12 +466,19 @@ def search_individuals(conn, query):
     if not words:
         return []
 
-    # Construire la requête LIKE avec AND pour chaque mot
+    # Construire la requête LIKE avec OR pour chaque mot
+    # Chaque mot peut matcher sur search_name, birth_date, death_date ou id
     conditions = []
     params = []
     for word in words:
-        conditions.append("search_name LIKE ?")
-        params.append(f"%{word}%")
+        # Le mot peut apparaître dans n'importe quel champ
+        conditions.append(f"""
+            (search_name LIKE ?
+            OR birth_date LIKE ?
+            OR death_date LIKE ?
+            OR id LIKE ?)
+        """)
+        params.extend([f"%{word}%", f"%{word}%", f"%{word}%", f"%{word}%"])
 
     sql = f"""
         SELECT id, given_name, family_name, birth_date, death_date,

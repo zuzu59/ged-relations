@@ -3,13 +3,16 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
-## [0.0.72] — 2026-07-26 à 17h30
+## [0.0.73] — 2026-07-26 à 17h35
 
-### Modifié
-- **Relations directes** : Algorithme de recherche de chemin de sang avec préférence pour les ancêtres masculins. Quand plusieurs chemins de même longueur existent, le chemin passant par plus d'hommes est privilégié.
-- **Nouvelle fonction `find_blood_path`** : Trouve le chemin avec au plus un changement de direction (monter puis descendre), en ne passant que par des liens parent-enfant (pas d'époux/se).
+### Ajouté
+- **Recherche enrichie** : La recherche d'individus fonctionne maintenant sur le nom, le prénom, la date de naissance, la date de décès ET l'ID
+- **Affichage de l'ID** : Les résultats de recherche affichent maintenant l'ID de l'individu à côté du nom (ex: `Nom Prénom (I1190314)`) pour faciliter la vérification
+- **Styles CSS** : Nouvelle classe `.search-result-item__id` pour le style de l'ID dans les résultats
 
 ---
+
+## [0.0.72] — 2026-07-26 à 17h30
 
 ## [0.0.71] — 2026-07-26 à 17h25
 

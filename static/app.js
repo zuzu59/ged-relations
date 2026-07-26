@@ -155,7 +155,7 @@ function renderResults(data, container, onSelected, inputId) {
         if (ind.mother_name) parentInfo.push('mère: ' + ind.mother_name);
 
         item.innerHTML = `
-            <div class="search-result-item__name">${escapeHtml(ind.full_name)}</div>
+            <div class="search-result-item__name">${escapeHtml(ind.full_name)} <span class="search-result-item__id">(${escapeHtml(ind.id)})</span></div>
             <div class="search-result-item__info">
                 ${dateInfo.map(d => `<span>📅 ${escapeHtml(d)}</span>`).join('')}
                 ${parentInfo.map(p => `<span>👨‍👩‍👧 ${escapeHtml(p)}</span>`).join('')}
