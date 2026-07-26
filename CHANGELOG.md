@@ -3,12 +3,15 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
-## [0.0.71] — 2026-07-26 à 17h25
+## [0.0.72] — 2026-07-26 à 17h30
 
 ### Modifié
-- **Relations directes** : Suppression des préfixes "père", "mère", "fils", "fille". Affichage épuré avec uniquement les noms et l'indentation.
+- **Relations directes** : Algorithme de recherche de chemin de sang avec préférence pour les ancêtres masculins. Quand plusieurs chemins de même longueur existent, le chemin passant par plus d'hommes est privilégié.
+- **Nouvelle fonction `find_blood_path`** : Trouve le chemin avec au plus un changement de direction (monter puis descendre), en ne passant que par des liens parent-enfant (pas d'époux/se).
 
 ---
+
+## [0.0.71] — 2026-07-26 à 17h25
 
 ## [0.0.70] — 2026-07-26 à 17h15
 

@@ -98,6 +98,134 @@ def find_shortest_path(adj, start, end):
     return None, -1
 
 
+def find_blood_path(conn, adj, start, end):
+    """Trouver le chemin de sang entre start et end (uniquement parent-enfant, pas époux).
+
+    En généalogie, la relation directe de sang ne passe que par des liens parent-enfant
+    (pas d'époux/se), avec au plus UN seul changement de direction.
+    Le chemin est soit :
+    - Ascendant direct : A → père → grand-père → ... (monter uniquement)
+    - Descendant direct : A → fils → petit-fils → ... (descendre uniquement)
+    - Ou monte puis descend : A → ... → Ancêtre → ... → B (un seul changement)
+    
+    Préférence : quand plusieurs chemins de même longueur existent, préférer ceux
+    qui passent par des ancêtres masculins.
+
+    Returns:
+        (path, degrees) where path is list of (person_id, rel_label) steps,
+        or None if no blood relation exists.
+    """
+    if start == end:
+        return [], 0
+
+    # Filtrer le graphe pour ne garder que les relations parent-enfant
+    blood_adj = {}
+    blood_rels = {"père", "mère", "fils", "fille"}
+    for person_id, neighbors in adj.items():
+        blood_adj[person_id] = [(nb, rel) for nb, rel in neighbors if rel in blood_rels]
+    
+    # Cache des sexes
+    sex_cache = {}
+    def get_sex(person_id):
+        if person_id not in sex_cache:
+            ind = get_individual(conn, person_id)
+            sex_cache[person_id] = ind['sex'] if ind else ''
+        return sex_cache[person_id]
+
+    best_path = None
+    best_degrees = float('inf')
+    best_male_count = -1  # Nombre d'ancêtres masculins dans le chemin (à maximiser)
+    
+    # Trouver tous les ancêtres de start (monter uniquement)
+    ancestors = {}  # person_id -> path depuis start
+    queue = deque([(start, [])])
+    visited = {start}
+    
+    while queue:
+        current, path = queue.popleft()
+        ancestors[current] = path
+        
+        for neighbor, rel_label in blood_adj.get(current, []):
+            # Ne suivre que les relations "père"/"mère" pour monter
+            if rel_label in ("père", "mère") and neighbor not in visited:
+                visited.add(neighbor)
+                queue.append((neighbor, path + [(neighbor, rel_label)]))
+    
+    # Pour chaque ancêtre commun, essayer de descendre vers end
+    for anc_id, path_up in ancestors.items():
+        # Compter les ancêtres masculins dans path_up
+        male_count_up = sum(1 for p, _ in path_up if get_sex(p) == 'M')
+        
+        # BFS depuis l'ancêtre vers end en descendant uniquement
+        queue_desc = deque([(anc_id, [])])
+        visited_desc = {anc_id}
+        
+        while queue_desc:
+            current, path_down = queue_desc.popleft()
+            
+            if current == end:
+                # Chemin complet : monter puis descendre
+                full_path = path_up + path_down
+                # Compter les ancêtres masculins dans path_down (exclus l'ancêtre commun déjà compté)
+                male_count_down = sum(1 for p, _ in path_down[:-1] if get_sex(p) == 'M')
+                total_males = male_count_up + male_count_down
+                
+                # Comparer : d'abord par longueur, puis par nombre d'ancêtres masculins
+                if len(full_path) < best_degrees or (len(full_path) == best_degrees and total_males > best_male_count):
+                    best_path = full_path
+                    best_degrees = len(full_path)
+                    best_male_count = total_males
+                break
+            
+            for neighbor, rel_label in blood_adj.get(current, []):
+                if neighbor in visited_desc:
+                    continue
+                # Ne suivre que "fils"/"fille" pour descendre
+                if rel_label in ("fils", "fille"):
+                    visited_desc.add(neighbor)
+                    queue_desc.append((neighbor, path_down + [(neighbor, rel_label)]))
+    
+    # Si pas de chemin avec changement de direction, essayer descendant direct
+    if best_path is None:
+        queue_desc = deque([(start, [])])
+        visited_desc = {start}
+        
+        while queue_desc:
+            current, path = queue_desc.popleft()
+            
+            if current == end:
+                return path, len(path)
+            
+            for neighbor, rel_label in blood_adj.get(current, []):
+                if neighbor in visited_desc:
+                    continue
+                if rel_label in ("fils", "fille"):
+                    visited_desc.add(neighbor)
+                    queue_desc.append((neighbor, path + [(neighbor, rel_label)]))
+    
+    # Si pas de chemin, essayer ascendant direct
+    if best_path is None:
+        queue_up = deque([(start, [])])
+        visited_up = {start}
+        
+        while queue_up:
+            current, path = queue_up.popleft()
+            
+            if current == end:
+                return path, len(path)
+            
+            for neighbor, rel_label in blood_adj.get(current, []):
+                if neighbor in visited_up:
+                    continue
+                if rel_label in ("père", "mère"):
+                    visited_up.add(neighbor)
+                    queue_up.append((neighbor, path + [(neighbor, rel_label)]))
+    
+    if best_path is not None:
+        return best_path, best_degrees
+    return None, -1
+
+
 def get_parents(conn, person_id):
     """Récupérer les parents d'un individu."""
     row = conn.execute(
@@ -249,11 +377,13 @@ def format_relation(conn, adj, person_a_id, person_b_id):
 
 
 def format_relation_direct(conn, adj, person_a_id, person_b_id):
-    """Formater la relation directe entre deux individus (chemin sans époux/se ni double parent).
+    """Formater la relation directe de sang entre deux individus.
+
+    En généalogie, la relation directe de sang ne passe que par des liens parent-enfant
+    (pas d'époux/se), avec au plus un changement de direction (monter puis descendre).
 
     Format linéaire : chaque saut sur une ligne avec indentation,
-    mais sans afficher les époux(se) ni les deux parents pour chaque personne.
-    Affiche uniquement les noms avec indentation (pas de préfixe père/mère/fils/fille).
+    affichant uniquement les noms sans préfixes.
 
     Returns:
         tuple: (degrees, formatted_text, error_message)
@@ -261,9 +391,10 @@ def format_relation_direct(conn, adj, person_a_id, person_b_id):
     if person_a_id == person_b_id:
         return 0, "Il s'agit de la même personne.", None
 
-    path, degrees = find_shortest_path(adj, person_a_id, person_b_id)
+    # Utiliser find_blood_path pour ne garder que les relations de sang
+    path, degrees = find_blood_path(conn, adj, person_a_id, person_b_id)
     if path is None:
-        return -1, "Aucun lien de parenté trouvé entre ces deux individus.", None
+        return -1, "Aucun lien de sang trouvé entre ces deux individus.", None
 
     # Calculer les indentations (montée = +1, descente = -1)
     indentations = [0]  # Person A à 0
@@ -282,7 +413,7 @@ def format_relation_direct(conn, adj, person_a_id, person_b_id):
     all_person_ids = [person_a_id] + [p[0] for p in path]
 
     # Première ligne : Person A
-    lines = [f"Lien de parenté : {degrees} degré(s)", ""]
+    lines = [f"Lien de sang : {degrees} degré(s)", ""]
     ind_a = get_individual(conn, person_a_id)
     if ind_a:
         name_a = f"{ind_a['given_name']} {ind_a['family_name']}".strip()
