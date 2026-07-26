@@ -21,11 +21,17 @@ cd /home/ubuntu/dev/ged-relations
 GED_FILE="${1:-/home/ubuntu/dev/bourgeoisie_extraction_78_individus.ged}"
 nohup .venv/bin/python app.py "$GED_FILE" > /tmp/srv.log 2>&1 &
 
-# 4. Attendre que le serveur démarrer
+# 4. Attendre que le serveur démarre (augmenté pour gros fichiers GED)
 echo "   Démarrage en cours..."
-for i in {1..10}; do
+for i in {1..60}; do
     if curl -s http://localhost:8082/ > /dev/null 2>&1; then
         echo "✅ Serveur démarré sur http://0.0.0.0:8082"
+        echo ""
+        echo "📊 Statistiques chargées :"
+        grep -E "Chargé|Graphe" /tmp/srv.log | tail -2 | while read line; do
+            echo "   $line"
+        done
+        echo ""
         curl -s http://localhost:8082/ | grep -oE "v[0-9]+\.[0-9]+\.[0-9]+"
         exit 0
     fi
