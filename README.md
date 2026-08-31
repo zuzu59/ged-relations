@@ -48,6 +48,16 @@ uv pip install -r requirements.txt
 ### Lancer l'application
 
 ```bash
+Le plus simple:
+
+# utiliser ce script pour la prod
+./start-prod.sh
+
+# utiliser ce sript pour la dev
+./start-dev.sh
+
+ou alors: 
+
 # Avec un fichier GED spécifique
 python app.py chemin/vers/fichier.ged
 

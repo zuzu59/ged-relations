@@ -1,7 +1,7 @@
 #!/bin/bash
-# Script de redémarrage propre du serveur GED Relations
+# Script de démarrage propre du serveur GED Relations
 
-echo "🔄 Redémarrage du serveur GED Relations..."
+echo "🔄 Démarrage du serveur GED Relations..."
 
 # 1. Tuer proprement le serveur
 pkill -9 -f "app.py" 2>/dev/null
@@ -17,13 +17,13 @@ for i in {1..5}; do
 done
 
 # 3. Redémarrer le serveur
-cd /workspaces/ged-relations
-GED_FILE="${1:-/workspaces/ged-relations/test_data.ged}"
+cd /home/ubuntu/dev/ged-relations
+GED_FILE="${1:-/home/ubuntu/dev/bourgeoisie_extraction_78_individus.ged}"
 nohup .venv/bin/python app.py "$GED_FILE" > /tmp/srv.log 2>&1 &
 
 # 4. Attendre que le serveur démarre (augmenté pour gros fichiers GED)
 echo "   Démarrage en cours..."
-for i in {1..20}; do
+for i in {1..60}; do
     if curl -s http://localhost:8082/ > /dev/null 2>&1; then
         echo "✅ Serveur démarré sur http://0.0.0.0:8082"
         echo ""
