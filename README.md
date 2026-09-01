@@ -48,27 +48,27 @@ uv pip install -r requirements.txt
 ### Lancer l'application
 
 ```bash
-Le plus simple:
+Le plus simple :
 
-# utiliser ce script pour la prod
+# utiliser ce script pour la prod (port 8082)
 ./start-prod.sh
 
-# utiliser ce sript pour la dev
+# utiliser ce script pour la dev (port 8092)
 ./start-dev.sh
 
-ou alors: 
+Ou alors :
 
-# Avec un fichier GED spécifique
-python app.py chemin/vers/fichier.ged
+# Avec un fichier GED spécifique et un port
+python app.py chemin/vers/fichier.ged --port 8082
 
-# Avec le fichier de test par défaut
-python app.py test_data.ged
+# Avec le fichier de test par défaut en dev
+python app.py test_data.ged --port 8092
 
 # Sans argument (utilise test_data.ged si présent)
-python app.py
+python app.py --port 8082
 ```
 
-L'application démarre sur : **http://0.0.0.0:8082**
+L'application démarre sur : **http://0.0.0.0:8082** en prod et **http://0.0.0.0:8092** en dev.
 
 ### Interface web
 

@@ -4,8 +4,8 @@ Serveur web pour calculer et afficher la relation la plus courte
 entre deux individus d'un arbre généalogique GEDCOM.
 """
 import os
-import sys
 import io
+import argparse
 import threading
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, send_file, Response
@@ -303,10 +303,17 @@ def create_app(ged_path=None):
     return app
 
 
+def _parse_args():
+    parser = argparse.ArgumentParser(description="GED Relations web app")
+    parser.add_argument("ged_path", nargs="?", default=None, help="Chemin du fichier GED")
+    parser.add_argument("--port", type=int, default=8082, help="Port d'écoute")
+    return parser.parse_args()
+
+
 # Lancement direct
 if __name__ == "__main__":
-    ged_path = sys.argv[1] if len(sys.argv) > 1 else None
-    app = create_app(ged_path)
-    print("\n🚀 GED Relations démarré sur http://0.0.0.0:8082")
+    args = _parse_args()
+    app = create_app(args.ged_path)
+    print(f"\n🚀 GED Relations démarré sur http://0.0.0.0:{args.port}")
     print("   Appuyez Ctrl+C pour arrêter.\n")
-    app.run(host="0.0.0.0", port=8082, threaded=True)
+    app.run(host="0.0.0.0", port=args.port, threaded=True)
