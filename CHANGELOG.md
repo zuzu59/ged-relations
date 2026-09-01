@@ -3,6 +3,13 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
+## [0.0.75] — 2026-09-01 à 10h35
+
+### Corrigé
+- **Scripts de démarrage** : `start-prod.sh` et `start-dev.sh` résolvent maintenant les chemins à partir de leur propre dossier, ce qui évite les erreurs quand ils sont lancés depuis un autre répertoire
+
+---
+
 ## [0.0.74] — 2026-09-01 à 10h15
 
 ### Changé

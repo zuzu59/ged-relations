@@ -19,8 +19,9 @@ for i in {1..5}; do
 done
 
 # 3. Redémarrer le serveur
-cd /home/ubuntu/dev/ged-relations
-GED_FILE="${1:-/home/ubuntu/dev/bourgeoisie_extraction_78_individus.ged}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR"
+GED_FILE="${1:-$SCRIPT_DIR/bourgeoisie_extraction_78_individus.ged}"
 nohup .venv/bin/python app.py "$GED_FILE" --port "$PORT" > /tmp/srv.log 2>&1 &
 
 # 4. Attendre que le serveur démarre (augmenté pour gros fichiers GED)
