@@ -3,6 +3,15 @@
 Le format de ce journal suit les directives [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et cette application respecte le [Versionnage sémantique](https://semver.org/lang/fr/).
 
+## [0.0.74] — 2026-09-01 à 10h15
+
+### Changé
+- **Démarrage serveur** : `app.py` accepte maintenant le port en argument (`--port`)
+- **Scripts** : `start-prod.sh` utilise le port 8082 et `start-dev.sh` utilise le port 8092
+- **README** : La documentation de démarrage a été mise à jour pour refléter les nouveaux ports
+
+---
+
 ## [0.0.73] — 2026-07-26 à 17h35
 
 ### Ajouté
